@@ -5,6 +5,7 @@ import TileFamily from '@/components/TileFamily';
 import CSVTable, { TileData } from '@/components/CSVTable';
 import ColorPalette, { ColorScheme } from '@/components/ColorPalette';
 import MiniPlayground from '@/components/MiniPlayground';
+import MainGrid from '@/components/MainGrid';
 
 export default function Home() {
   const [tiles, setTiles] = useState<TileData[]>([]);
@@ -87,6 +88,12 @@ export default function Home() {
             <div className="text-gray-400 text-center">Loading...</div>
           )}
         </div>
+
+        {/* Main Grid */}
+        <MainGrid 
+          allTiles={tiles}
+          customColors={customColors}
+        />
 
         {/* CSV Table */}
         <div className="bg-gray-800 rounded-lg shadow-lg p-8 mb-8">

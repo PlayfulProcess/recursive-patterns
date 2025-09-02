@@ -37,13 +37,7 @@ const TileFamily: React.FC<TileFamilyProps> = ({ selectedTile, allTiles, customC
         <h3 className="text-white text-lg font-bold mb-4">Selected Tile</h3>
         <div className="border-2 border-blue-500 rounded-lg p-2">
           <TileRenderer
-            id={selectedTile.id}
-            edge1={selectedTile.edge1}
-            edge2={selectedTile.edge2}
-            edge3={selectedTile.edge3}
-            edge4={selectedTile.edge4}
-            rotation={selectedTile.rotation}
-            shape={selectedTile.shape}
+            tile={selectedTile}
             size={120}
             customColors={customColors}
           />
@@ -64,13 +58,7 @@ const TileFamily: React.FC<TileFamilyProps> = ({ selectedTile, allTiles, customC
               } p-1`}
             >
               <TileRenderer
-                id={tile.id}
-                edge1={tile.edge1}
-                edge2={tile.edge2}
-                edge3={tile.edge3}
-                edge4={tile.edge4}
-                rotation={tile.rotation}
-                shape={tile.shape}
+                tile={tile}
                 size={80}
                 customColors={customColors}
               />
@@ -88,13 +76,7 @@ const TileFamily: React.FC<TileFamilyProps> = ({ selectedTile, allTiles, customC
             {mirrorH ? (
               <div className="border border-gray-600 rounded p-1">
                 <TileRenderer
-                  id={mirrorH.id}
-                  edge1={mirrorH.edge1}
-                  edge2={mirrorH.edge2}
-                  edge3={mirrorH.edge3}
-                  edge4={mirrorH.edge4}
-                  rotation={mirrorH.rotation}
-                  shape={mirrorH.shape}
+                  tile={mirrorH}
                   size={80}
                   customColors={customColors}
                 />
@@ -108,13 +90,7 @@ const TileFamily: React.FC<TileFamilyProps> = ({ selectedTile, allTiles, customC
             {mirrorV ? (
               <div className="border border-gray-600 rounded p-1">
                 <TileRenderer
-                  id={mirrorV.id}
-                  edge1={mirrorV.edge1}
-                  edge2={mirrorV.edge2}
-                  edge3={mirrorV.edge3}
-                  edge4={mirrorV.edge4}
-                  rotation={mirrorV.rotation}
-                  shape={mirrorV.shape}
+                  tile={mirrorV}
                   size={80}
                   customColors={customColors}
                 />
