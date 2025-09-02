@@ -146,13 +146,7 @@ const MiniPlayground: React.FC<MiniPlaygroundProps> = ({ allTiles, customColors 
                 title={`${tile.id} - Click to remove`}
               >
                 <TileRenderer
-                  id={tile.id}
-                  edge1={tile.edge1}
-                  edge2={tile.edge2}
-                  edge3={tile.edge3}
-                  edge4={tile.edge4}
-                  rotation={tile.rotation}
-                  shape={tile.shape}
+                  tile={tile}
                   size={GRID_SIZE - 4}
                   customColors={customColors}
                 />
@@ -177,13 +171,7 @@ const MiniPlayground: React.FC<MiniPlaygroundProps> = ({ allTiles, customColors 
                 title={tile.id}
               >
                 <TileRenderer
-                  id={tile.id}
-                  edge1={tile.edge1}
-                  edge2={tile.edge2}
-                  edge3={tile.edge3}
-                  edge4={tile.edge4}
-                  rotation={tile.rotation}
-                  shape={tile.shape}
+                  tile={tile}
                   size={40}
                   customColors={customColors}
                 />
