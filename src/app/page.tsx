@@ -6,6 +6,14 @@ import CSVTable, { TileData } from '@/components/CSVTable';
 import ColorPalette, { ColorScheme } from '@/components/ColorPalette';
 import MiniPlayground from '@/components/MiniPlayground';
 import MainGridEnhanced from '@/components/MainGridEnhanced';
+import AIPatternChatPopup from '@/components/AIPatternChatPopup';
+
+interface GridCell {
+  x: number;
+  y: number;
+  tile?: TileData;
+  rotation?: number;
+}
 
 export default function Home() {
   const [tiles, setTiles] = useState<TileData[]>([]);
@@ -14,6 +22,17 @@ export default function Home() {
     a: '#8B5A3C', // Brown
     b: '#5B8DBF', // Blue
     c: '#D4A574', // Beige
+  });
+  
+  // Shared grid state for AI chat
+  const [mainGrid, setMainGrid] = useState<GridCell[]>(() => {
+    const cells: GridCell[] = [];
+    for (let y = 0; y < 8; y++) {
+      for (let x = 0; x < 12; x++) {
+        cells.push({ x, y });
+      }
+    }
+    return cells;
   });
 
   useEffect(() => {
@@ -102,6 +121,15 @@ export default function Home() {
         <MainGridEnhanced 
           allTiles={tiles}
           customColors={customColors}
+        />
+
+        {/* AI Pattern Chat Popup */}
+        <AIPatternChatPopup
+          grid={mainGrid}
+          allTiles={tiles}
+          onGridUpdate={setMainGrid}
+          gridWidth={12}
+          gridHeight={8}
         />
 
         {/* Mini Playground */}
