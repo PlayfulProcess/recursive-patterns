@@ -3,10 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import TileFamily from '@/components/TileFamily';
 import CSVTable, { TileData } from '@/components/CSVTable';
+import ColorPalette, { ColorScheme } from '@/components/ColorPalette';
+import MiniPlayground from '@/components/MiniPlayground';
 
 export default function Home() {
   const [tiles, setTiles] = useState<TileData[]>([]);
   const [selectedTile, setSelectedTile] = useState<TileData | undefined>();
+  const [customColors, setCustomColors] = useState<ColorScheme>({
+    a: '#8B5A3C', // Brown
+    b: '#5B8DBF', // Blue
+    c: '#D4A574', // Beige
+  });
 
   useEffect(() => {
     const loadTiles = async () => {
@@ -45,29 +52,52 @@ export default function Home() {
     setSelectedTile(tile);
   };
 
+  const handleColorChange = (edge: 'a' | 'b' | 'c', color: string) => {
+    setCustomColors(prev => ({
+      ...prev,
+      [edge]: color
+    }));
+  };
+
   return (
     <div className="min-h-screen p-8 bg-gray-900">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-center mb-8 text-white">Recursive Pattern Tiles</h1>
         
+        {/* Color Palette */}
+        <ColorPalette 
+          selectedColors={customColors} 
+          onColorChange={handleColorChange} 
+        />
+        
         {/* Tile Family Viewer */}
         <div className="bg-gray-800 rounded-lg shadow-lg p-8 mb-8">
           <h2 className="text-2xl font-bold mb-6 text-center text-white">Tile Family</h2>
           {selectedTile ? (
-            <TileFamily selectedTile={selectedTile} allTiles={tiles} />
+            <TileFamily 
+              selectedTile={selectedTile} 
+              allTiles={tiles} 
+              customColors={customColors}
+            />
           ) : (
             <div className="text-gray-400 text-center">Loading...</div>
           )}
         </div>
 
         {/* CSV Table */}
-        <div className="bg-gray-800 rounded-lg shadow-lg p-8">
+        <div className="bg-gray-800 rounded-lg shadow-lg p-8 mb-8">
           <CSVTable 
             data={tiles} 
             onRowClick={handleRowClick}
             selectedTile={selectedTile}
           />
         </div>
+
+        {/* Mini Playground */}
+        <MiniPlayground 
+          allTiles={tiles}
+          customColors={customColors}
+        />
       </div>
     </div>
   );

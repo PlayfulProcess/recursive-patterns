@@ -3,13 +3,15 @@
 import React from 'react';
 import TileRenderer from './TileRenderer';
 import { TileData } from './CSVTable';
+import { ColorScheme } from './ColorPalette';
 
 interface TileFamilyProps {
   selectedTile: TileData;
   allTiles: TileData[];
+  customColors?: ColorScheme;
 }
 
-const TileFamily: React.FC<TileFamilyProps> = ({ selectedTile, allTiles }) => {
+const TileFamily: React.FC<TileFamilyProps> = ({ selectedTile, allTiles, customColors }) => {
   // Find all 4 rotations of the same shape
   const getRotationFamily = (tile: TileData): TileData[] => {
     return allTiles.filter(t => t.shape === tile.shape).sort((a, b) => {
@@ -27,19 +29,6 @@ const TileFamily: React.FC<TileFamilyProps> = ({ selectedTile, allTiles }) => {
   const mirrorH = getMirrorTile(selectedTile.mirrorH);
   const mirrorV = getMirrorTile(selectedTile.mirrorV);
 
-  console.log('=== Debug Mirror Lookup ===');
-  console.log('Selected tile:', selectedTile.id);
-  console.log('Mirror-H ID:', `"${selectedTile.mirrorH}"`, 'Found:', !!mirrorH);
-  console.log('Mirror-V ID:', `"${selectedTile.mirrorV}"`, 'Found:', !!mirrorV);
-  console.log('Total tiles loaded:', allTiles.length);
-  
-  if (!mirrorV) {
-    console.log('Searching for Mirror-V ID:', `"${selectedTile.mirrorV}"`);
-    const exactMatch = allTiles.find(t => t.id === selectedTile.mirrorV);
-    const similarMatches = allTiles.filter(t => t.id.includes('baac'));
-    console.log('Exact match:', exactMatch);
-    console.log('Similar matches:', similarMatches.map(t => `"${t.id}"`));
-  }
 
   return (
     <div className="grid grid-cols-3 gap-8">
@@ -56,6 +45,7 @@ const TileFamily: React.FC<TileFamilyProps> = ({ selectedTile, allTiles }) => {
             rotation={selectedTile.rotation}
             shape={selectedTile.shape}
             size={120}
+            customColors={customColors}
           />
         </div>
       </div>
@@ -82,6 +72,7 @@ const TileFamily: React.FC<TileFamilyProps> = ({ selectedTile, allTiles }) => {
                 rotation={tile.rotation}
                 shape={tile.shape}
                 size={80}
+                customColors={customColors}
               />
             </div>
           ))}
@@ -105,6 +96,7 @@ const TileFamily: React.FC<TileFamilyProps> = ({ selectedTile, allTiles }) => {
                   rotation={mirrorH.rotation}
                   shape={mirrorH.shape}
                   size={80}
+                  customColors={customColors}
                 />
               </div>
             ) : (
@@ -124,6 +116,7 @@ const TileFamily: React.FC<TileFamilyProps> = ({ selectedTile, allTiles }) => {
                   rotation={mirrorV.rotation}
                   shape={mirrorV.shape}
                   size={80}
+                  customColors={customColors}
                 />
               </div>
             ) : (

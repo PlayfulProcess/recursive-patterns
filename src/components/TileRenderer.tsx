@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { ColorScheme } from './ColorPalette';
 
 interface TileProps {
   id: string;
@@ -11,6 +12,7 @@ interface TileProps {
   rotation: string;
   shape: string;
   size?: number;
+  customColors?: ColorScheme;
 }
 
 const TileRenderer: React.FC<TileProps> = ({ 
@@ -21,9 +23,20 @@ const TileRenderer: React.FC<TileProps> = ({
   edge4, 
   rotation, 
   shape,
-  size = 100 
+  size = 100,
+  customColors
 }) => {
   const getColor = (edge: string) => {
+    if (customColors) {
+      switch (edge) {
+        case 'a': return customColors.a;
+        case 'b': return customColors.b;
+        case 'c': return customColors.c;
+        default: return '#666';
+      }
+    }
+    
+    // Default colors
     switch (edge) {
       case 'a': return '#8B5A3C'; // Brown
       case 'b': return '#5B8DBF'; // Blue
