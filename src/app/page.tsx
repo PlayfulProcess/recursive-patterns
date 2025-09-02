@@ -5,7 +5,7 @@ import TileFamily from '@/components/TileFamily';
 import CSVTable, { TileData } from '@/components/CSVTable';
 import ColorPalette, { ColorScheme } from '@/components/ColorPalette';
 import MiniPlayground from '@/components/MiniPlayground';
-import MainGrid from '@/components/MainGrid';
+import MainGridEnhanced from '@/components/MainGridEnhanced';
 
 export default function Home() {
   const [tiles, setTiles] = useState<TileData[]>([]);
@@ -89,8 +89,8 @@ export default function Home() {
           )}
         </div>
 
-        {/* Main Grid */}
-        <MainGrid 
+        {/* Main Grid Enhanced */}
+        <MainGridEnhanced 
           allTiles={tiles}
           customColors={customColors}
         />
