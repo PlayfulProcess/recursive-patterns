@@ -18,7 +18,11 @@ export default function Home() {
   useEffect(() => {
     const loadTiles = async () => {
       try {
-        const response = await fetch('/patterns2.csv');
+        // Try direct CSV file first, then API fallback
+        let response = await fetch('/patterns2.csv');
+        if (!response.ok) {
+          response = await fetch('/api/patterns');
+        }
         const csvText = await response.text();
         const lines = csvText.trim().split('\n');
         const headers = lines[0].split(',');
