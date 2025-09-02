@@ -35,9 +35,10 @@ export default function MainGridEnhanced({ allTiles, customColors }: MainGridEnh
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
   const [focusedCell, setFocusedCell] = useState<GridCell | null>(null);
   const [showTileSelector, setShowTileSelector] = useState(false);
-  const [draggedTile, setDraggedTile] = useState<TileData | null>(null);
-  const [draggedFromCell, setDraggedFromCell] = useState<GridCell | null>(null);
+  const [draggedTiles, setDraggedTiles] = useState<Map<string, { tile: TileData, rotation: number }>>(new Map());
+  const [draggedFromCells, setDraggedFromCells] = useState<Set<string>>(new Set());
   const [isDragging, setIsDragging] = useState(false);
+  const [dropTargetCell, setDropTargetCell] = useState<GridCell | null>(null);
   const [lastSelectedCell, setLastSelectedCell] = useState<GridCell | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -284,62 +285,131 @@ export default function MainGridEnhanced({ allTiles, customColors }: MainGridEnh
     detectDuplicates();
   }, [grid, detectDuplicates]);
 
-  // Drag and Drop handlers
+  // Drag and Drop handlers for group dragging
   const handleDragStart = (e: React.DragEvent, cell: GridCell) => {
-    if (!cell.tile) return;
+    const cellKey = getCellKey(cell);
     
-    setIsDragging(true);
-    setDraggedTile(cell.tile);
-    setDraggedFromCell(cell);
-    
-    // Create custom drag image
-    const dragImage = document.createElement('div');
-    dragImage.style.width = '60px';
-    dragImage.style.height = '60px';
-    dragImage.style.position = 'absolute';
-    dragImage.style.top = '-1000px';
-    document.body.appendChild(dragImage);
-    e.dataTransfer.setDragImage(dragImage, 30, 30);
-    
-    e.dataTransfer.effectAllowed = 'move';
+    // If the dragged cell is part of selection, drag all selected tiles
+    if (selectedCells.has(cellKey)) {
+      const tilesToDrag = new Map<string, { tile: TileData, rotation: number }>();
+      const cellsToClear = new Set<string>();
+      
+      selectedCells.forEach(key => {
+        const selectedCell = getCellFromKey(key);
+        if (selectedCell?.tile) {
+          tilesToDrag.set(key, { 
+            tile: selectedCell.tile, 
+            rotation: selectedCell.rotation || 0 
+          });
+          cellsToClear.add(key);
+        }
+      });
+      
+      if (tilesToDrag.size > 0) {
+        setIsDragging(true);
+        setDraggedTiles(tilesToDrag);
+        setDraggedFromCells(cellsToClear);
+        
+        // Create custom drag image showing count
+        const dragImage = document.createElement('div');
+        dragImage.style.width = '60px';
+        dragImage.style.height = '60px';
+        dragImage.style.position = 'absolute';
+        dragImage.style.top = '-1000px';
+        dragImage.innerHTML = `<div style="background: #3B82F6; color: white; padding: 4px 8px; border-radius: 4px;">${tilesToDrag.size} tiles</div>`;
+        document.body.appendChild(dragImage);
+        e.dataTransfer.setDragImage(dragImage, 30, 30);
+        
+        e.dataTransfer.effectAllowed = 'move';
+      }
+    } else if (cell.tile) {
+      // Single tile drag
+      setIsDragging(true);
+      const tilesToDrag = new Map<string, { tile: TileData, rotation: number }>();
+      tilesToDrag.set(cellKey, { tile: cell.tile, rotation: cell.rotation || 0 });
+      setDraggedTiles(tilesToDrag);
+      setDraggedFromCells(new Set([cellKey]));
+      
+      e.dataTransfer.effectAllowed = 'move';
+    }
   };
 
   const handleDragEnd = () => {
     setIsDragging(false);
-    setDraggedTile(null);
-    setDraggedFromCell(null);
+    setDraggedTiles(new Map());
+    setDraggedFromCells(new Set());
+    setDropTargetCell(null);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, cell: GridCell) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    setDropTargetCell(cell);
+  };
+
+  const handleDragLeave = () => {
+    setDropTargetCell(null);
   };
 
   const handleDrop = (e: React.DragEvent, targetCell: GridCell) => {
     e.preventDefault();
     
-    if (!draggedTile || !draggedFromCell) return;
+    if (draggedTiles.size === 0) return;
     
-    // Swap tiles if target has a tile, otherwise just move
-    const targetTile = targetCell.tile;
-    const targetRotation = targetCell.rotation;
+    // Calculate offset for group movement
+    const firstDraggedKey = Array.from(draggedFromCells)[0];
+    const firstDraggedCell = getCellFromKey(firstDraggedKey);
+    if (!firstDraggedCell) return;
     
-    // Place dragged tile in target
-    placeTileInGrid(targetCell, draggedTile, draggedFromCell.rotation);
+    const offsetX = targetCell.x - firstDraggedCell.x;
+    const offsetY = targetCell.y - firstDraggedCell.y;
     
-    // If swapping, place target tile in source
-    if (targetTile && draggedFromCell) {
-      placeTileInGrid(draggedFromCell, targetTile, targetRotation);
-    } else if (draggedFromCell) {
-      // Clear source cell if not swapping
-      clearCell(draggedFromCell);
-    }
+    // Create new grid state
+    const newGrid = [...grid];
+    const tilesToPlace = new Map<string, { tile: TileData, rotation: number }>();
     
+    // Clear original positions
+    draggedFromCells.forEach(key => {
+      const cell = getCellFromKey(key);
+      if (cell) {
+        const index = cell.y * 12 + cell.x;
+        newGrid[index] = { ...newGrid[index], tile: undefined, rotation: undefined };
+      }
+    });
+    
+    // Calculate new positions for dragged tiles
+    draggedFromCells.forEach(key => {
+      const [x, y] = key.split('-').map(Number);
+      const newX = x + offsetX;
+      const newY = y + offsetY;
+      
+      // Check if new position is within bounds
+      if (newX >= 0 && newX < 12 && newY >= 0 && newY < 8) {
+        const newKey = `${newX}-${newY}`;
+        const tileData = draggedTiles.get(key);
+        if (tileData) {
+          tilesToPlace.set(newKey, tileData);
+        }
+      }
+    });
+    
+    // Place tiles in new positions
+    tilesToPlace.forEach((tileData, key) => {
+      const [x, y] = key.split('-').map(Number);
+      const index = y * 12 + x;
+      newGrid[index] = { 
+        ...newGrid[index], 
+        tile: tileData.tile, 
+        rotation: tileData.rotation 
+      };
+    });
+    
+    setGrid(newGrid);
     handleDragEnd();
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg shadow-lg p-8">
+    <div className="bg-gray-800 rounded-lg shadow-lg p-8 mb-8">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-white">Main Grid (12×8 - 96 tiles)</h2>
         <div className="flex gap-4 items-center">
@@ -425,17 +495,16 @@ export default function MainGridEnhanced({ allTiles, customColors }: MainGridEnh
                   onClick={(e) => handleCellClick(cell, e.shiftKey, e.ctrlKey || e.metaKey)}
                   onDragStart={(e) => handleDragStart(e, cell)}
                   onDragEnd={handleDragEnd}
-                  onDragOver={handleDragOver}
+                  onDragOver={(e) => handleDragOver(e, cell)}
+                  onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, cell)}
-                  draggable={!!cell.tile}
+                  draggable={!!cell.tile || selectedCells.has(cellKey)}
                   className={`
                     aspect-square cursor-pointer transition-all duration-200 relative
-                    ${isSelected ? 'ring-2 ring-blue-400 ring-inset z-10' : ''}
-                    ${isFocused ? 'ring-2 ring-yellow-400 ring-inset z-20' : ''}
-                    ${isDuplicate ? 'ring-2 ring-red-500 ring-inset' : ''}
-                    ${!isSelected && !isFocused && !isDuplicate ? 'hover:ring-1 hover:ring-gray-400 hover:ring-inset hover:z-10' : ''}
                     ${cell.tile ? '' : 'bg-gray-900 border border-gray-700'}
-                    ${isDragging && draggedFromCell?.x === cell.x && draggedFromCell?.y === cell.y ? 'opacity-50' : ''}
+                    ${isDragging && draggedFromCells.has(cellKey) ? 'opacity-30' : ''}
+                    ${dropTargetCell?.x === cell.x && dropTargetCell?.y === cell.y ? 'ring-4 ring-green-400 ring-inset' : ''}
+                    ${!isSelected && !isFocused && !isDuplicate ? 'hover:ring-2 hover:ring-gray-400 hover:ring-inset hover:z-10' : ''}
                   `}
                   tabIndex={0}
                 >
@@ -450,6 +519,30 @@ export default function MainGridEnhanced({ allTiles, customColors }: MainGridEnh
                   {!cell.tile && (
                     <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">
                       {String.fromCharCode(65 + cell.x)}{cell.y + 1}
+                    </div>
+                  )}
+                  
+                  {/* Selection Overlays */}
+                  {isSelected && (
+                    <div className="absolute inset-0 pointer-events-none z-10">
+                      <div className="absolute inset-0 bg-blue-400 opacity-30 animate-pulse"></div>
+                      <div className="absolute inset-0 ring-4 ring-blue-500 ring-inset"></div>
+                      {selectedCells.size > 1 && (
+                        <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs px-1 rounded-bl">
+                          ✓
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {isFocused && (
+                    <div className="absolute inset-0 pointer-events-none">
+                      <div className="absolute inset-0 ring-4 ring-yellow-400 ring-inset"></div>
+                    </div>
+                  )}
+                  {isDuplicate && (
+                    <div className="absolute inset-0 pointer-events-none">
+                      <div className="absolute inset-0 bg-red-500 opacity-20"></div>
+                      <div className="absolute inset-0 ring-2 ring-red-500 ring-inset"></div>
                     </div>
                   )}
                 </div>

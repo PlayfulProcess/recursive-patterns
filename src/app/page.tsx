@@ -89,12 +89,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* Main Grid Enhanced */}
-        <MainGridEnhanced 
-          allTiles={tiles}
-          customColors={customColors}
-        />
-
         {/* CSV Table */}
         <div className="bg-gray-800 rounded-lg shadow-lg p-8 mb-8">
           <CSVTable 
@@ -103,6 +97,12 @@ export default function Home() {
             selectedTile={selectedTile}
           />
         </div>
+
+        {/* Main Grid Enhanced */}
+        <MainGridEnhanced 
+          allTiles={tiles}
+          customColors={customColors}
+        />
 
         {/* Mini Playground */}
         <MiniPlayground 
