@@ -211,10 +211,16 @@ export default function MainGridEnhanced({ allTiles, customColors }: MainGridEnh
   };
 
   const fillGridWithAllTiles = () => {
+    // Create a shuffled copy of all tiles to ensure 1-1 mapping
+    const shuffledTiles = [...allTiles].sort(() => Math.random() - 0.5);
+    
     setGrid(prev => prev.map((cell, index) => {
-      const tile = allTiles[index];
+      const tile = shuffledTiles[index];
       return tile ? { ...cell, tile, rotation: 0 } : cell;
     }));
+    
+    // Clear duplicates since we're placing each tile only once
+    setDuplicates(new Set());
   };
 
   const clearGrid = () => {
