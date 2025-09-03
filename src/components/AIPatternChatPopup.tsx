@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { TileData } from './CSVTable';
 import { AIPatternFunctions } from './AIPatternFunctions';
 
@@ -50,24 +51,13 @@ export default function AIPatternChatPopup({
     if (messages.length === 0) {
       setMessages([{
         role: 'assistant',
-        content: `🎨 **AI Pattern Assistant ready!** 
+        content: `Hey! I can help arrange your tiles. Try asking:
+• "Fill the grid"
+• "Match the edges"
+• "Find mirrors" 
+• "Show rotations"
 
-I can help you create beautiful tile patterns using advanced edge matching algorithms. I can:
-
-• **Optimize Edge Matching** - Smart initial tile placement
-• **Build Lateral Chains** - Create horizontal flow patterns  
-• **Build Vertical Chains** - Create vertical flow patterns
-• **Complete Beautiful Patterns** - Run the full algorithm
-• **Debug Edge Signatures** - Analyze tile connections
-
-Try asking me things like:
-- "Create a beautiful pattern"
-- "Build horizontal chains"  
-- "Optimize the edge matching"
-- "Show me the edge signatures"
-- "Analyze the current grid"
-
-What would you like to do with your tiles?`,
+What pattern should we make?`,
         timestamp: new Date()
       }]);
     }
@@ -286,7 +276,7 @@ What would you like to do with your tiles?`,
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -298,18 +288,10 @@ What would you like to do with your tiles?`,
       {/* Floating Chat Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center z-40"
-        title="Open AI Pattern Assistant"
+        className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center z-40 text-2xl"
+        title="Open Pattern Chat"
       >
-        <div className="relative">
-          🤖
-          {apiStatus === 'connected' && (
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full"></div>
-          )}
-          {apiStatus === 'error' && (
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
-          )}
-        </div>
+        💬
       </button>
 
       {/* Chat Modal - Hovering over grid */}
@@ -319,85 +301,23 @@ What would you like to do with your tiles?`,
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-600 bg-gray-800 rounded-t-lg">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  🤖
-                </div>
-                <div>
-                  <h3 className="font-semibold text-white">AI Pattern Assistant</h3>
-                  <p className="text-xs text-gray-300">
-                    {apiStatus === 'connected' ? '✅ Claude API Connected' : 
-                     apiStatus === 'error' ? '❌ API Error - Server restart may be needed' : '🔄 Checking...'}
-                  </p>
-                </div>
+                <h3 className="font-semibold text-white">Pattern Chat</h3>
+                <div className={`h-2 w-2 rounded-full ${
+                  apiStatus === 'connected' ? 'bg-green-400' : 
+                  apiStatus === 'error' ? 'bg-red-400' : 
+                  'bg-gray-400'
+                }`} />
+                <span className="text-xs text-gray-400">
+                  {grid.filter(cell => cell.tile).length}/{grid.length}
+                </span>
               </div>
               
-              <div className="flex items-center space-x-2">
-                <div className="text-xs text-gray-300">
-                  {grid.filter(cell => cell.tile).length} tiles
-                </div>
-                <button
-                  onClick={async () => {
-                    console.log('=== TESTING ALL ENDPOINTS ===');
-                    
-                    // Test simple-post endpoint
-                    try {
-                      console.log('1. Testing /api/simple-post GET...');
-                      const getRes = await fetch('/api/simple-post');
-                      console.log('   GET:', getRes.status, await getRes.text());
-                      
-                      console.log('2. Testing /api/simple-post POST...');
-                      const postRes = await fetch('/api/simple-post', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ test: 'data' })
-                      });
-                      console.log('   POST:', postRes.status, await postRes.text());
-                    } catch (e) {
-                      console.error('Simple-post test failed:', e);
-                    }
-                    
-                    // Test ai-chat endpoint
-                    try {
-                      console.log('3. Testing /api/ai-chat POST...');
-                      const aiRes = await fetch('/api/ai-chat', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                          messages: [{ role: 'user', content: 'test' }] 
-                        })
-                      });
-                      console.log('   AI-Chat POST:', aiRes.status);
-                      if (aiRes.ok) {
-                        const data = await aiRes.json();
-                        console.log('   Response:', data);
-                      } else {
-                        console.log('   Error text:', await aiRes.text());
-                      }
-                    } catch (e) {
-                      console.error('AI-chat test failed:', e);
-                    }
-                    
-                    console.log('=== TESTS COMPLETE ===');
-                  }}
-                  className="text-xs bg-yellow-600 hover:bg-yellow-500 px-2 py-1 rounded text-white"
-                  title="Debug API Routes"
-                >
-                  Debug
-                </button>
-                <button
-                  onClick={testConnection}
-                  className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-gray-300"
-                  title="Test API Connection"
-                >
-                  Test
-                </button>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="text-gray-400 hover:text-gray-200 text-2xl font-light"
-                >
-                  ×
-                </button>
-              </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="text-gray-400 hover:text-gray-200 text-2xl font-light"
+              >
+                ×
+              </button>
             </div>
 
             {/* Messages */}
@@ -414,7 +334,15 @@ What would you like to do with your tiles?`,
                         : 'bg-gray-700 text-gray-100'
                     }`}
                   >
-                    <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                    {message.role === 'assistant' ? (
+                      <div className="text-sm prose prose-invert prose-sm max-w-none prose-p:mb-2 prose-p:mt-0">
+                        <ReactMarkdown>
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <div className="whitespace-pre-wrap text-sm break-words">{message.content}</div>
+                    )}
                     
                     {/* Function Call Results */}
                     {message.functionCalls && message.functionCalls.length > 0 && (
@@ -459,8 +387,8 @@ What would you like to do with your tiles?`,
                 <textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Ask me to create patterns, optimize tiles, or analyze the grid..."
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask about patterns..."
                   className="flex-1 border border-gray-600 bg-gray-800 text-gray-100 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
                   rows={2}
                   disabled={isLoading}

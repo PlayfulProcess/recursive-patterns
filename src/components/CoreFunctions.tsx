@@ -97,12 +97,19 @@ export function optimizeEdgeMatching(grid: GridCell[], gridWidth: number = 12, g
 
 /**
  * EXACT REFERENCE: swapTilesNoHistory equivalent
+ * Fixed to only swap tile data, not coordinates
  */
 function swapTilesNoHistory(grid: GridCell[], pos1: number, pos2: number): void {
-  // Swap the entire grid cells
-  const temp = { ...grid[pos1] };
-  grid[pos1] = { ...grid[pos2] };
-  grid[pos2] = temp;
+  // Only swap the tile and rotation, keep x,y coordinates correct
+  const tile1 = grid[pos1].tile;
+  const rotation1 = grid[pos1].rotation;
+  const tile2 = grid[pos2].tile;
+  const rotation2 = grid[pos2].rotation;
+  
+  grid[pos1].tile = tile2;
+  grid[pos1].rotation = rotation2;
+  grid[pos2].tile = tile1;
+  grid[pos2].rotation = rotation1;
 }
 
 /**
