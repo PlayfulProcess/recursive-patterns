@@ -5,7 +5,6 @@ import TileRenderer from '@/components/TileRenderer';
 import TileSelector from '@/components/TileSelector';
 import { TileData } from '@/components/CSVTable';
 import { ColorScheme } from '@/components/ColorPalette';
-import { fillGrid } from './CoreFunctions';
 
 interface MainGridEnhancedProps {
   allTiles: TileData[];
@@ -232,9 +231,13 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
   };
 
   const fillGridWithAllTiles = () => {
-    // Use the new fillGrid function from CoreFunctions
-    const newGrid = fillGrid(grid, allTiles);
-    setGrid(newGrid);
+    // Create a shuffled copy of all tiles to ensure 1-1 mapping
+    const shuffledTiles = [...allTiles].sort(() => Math.random() - 0.5);
+    
+    setGrid(prev => prev.map((cell, index) => {
+      const tile = shuffledTiles[index];
+      return tile ? { ...cell, tile, rotation: 0 } : cell;
+    }));
     
     // Clear duplicates since we're placing each tile only once
     setDuplicates(new Set());

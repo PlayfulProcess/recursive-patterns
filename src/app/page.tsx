@@ -7,7 +7,7 @@ import ColorPalette, { ColorScheme } from '@/components/ColorPalette';
 import MiniPlayground from '@/components/MiniPlayground';
 import MainGridEnhanced from '@/components/MainGridEnhanced';
 import AIPatternChatPopup from '@/components/AIPatternChatPopup';
-import PatternFunctionPanel from '@/components/PatternFunctionPanel';
+import PatternFunctionPopup from '@/components/PatternFunctionPopup';
 
 interface GridCell {
   x: number;
@@ -35,6 +35,9 @@ export default function Home() {
     }
     return cells;
   });
+  
+  // Pattern Functions popup state
+  const [isPatternPopupOpen, setIsPatternPopupOpen] = useState(false);
 
   useEffect(() => {
     const loadTiles = async () => {
@@ -161,14 +164,25 @@ export default function Home() {
           gridHeight={8}
         />
 
-        {/* Pattern Function Panel */}
-        <PatternFunctionPanel
+        {/* Pattern Function Button */}
+        <div className="bg-purple-900 text-white p-4 rounded-lg">
+          <button
+            onClick={() => setIsPatternPopupOpen(true)}
+            className="w-full py-3 px-4 bg-purple-700 hover:bg-purple-600 rounded-lg 
+                     transition-all duration-200 font-semibold text-lg
+                     hover:scale-[1.02] active:scale-[0.98]"
+          >
+            🎨 Open Pattern Functions
+          </button>
+        </div>
+
+        {/* Pattern Function Popup */}
+        <PatternFunctionPopup
+          isOpen={isPatternPopupOpen}
+          onClose={() => setIsPatternPopupOpen(false)}
           grid={mainGrid}
           allTiles={tiles}
           onGridUpdate={setMainGrid}
-          onFunctionExecute={(functionName, result) => {
-            console.log(`🔧 Manual function executed: ${functionName}`, result);
-          }}
         />
 
         {/* Mini Playground */}
