@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { TileData } from './CSVTable';
+import { AIPatternFunctions } from './AIPatternFunctions';
 
 interface GridCell {
   x: number;
@@ -142,6 +143,25 @@ export default function PatternFunctionPanel({
   const [isExpanded, setIsExpanded] = useState(false);
   const [executingFunction, setExecutingFunction] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<string>('');
+  const aiPatternFunctionsRef = useRef<AIPatternFunctions | null>(null);
+
+  // Initialize AI pattern functions
+  useEffect(() => {
+    aiPatternFunctionsRef.current = new AIPatternFunctions(
+      grid,
+      allTiles,
+      onGridUpdate,
+      12, // gridWidth
+      8   // gridHeight
+    );
+  }, [allTiles, onGridUpdate]);
+
+  // Update functions when grid changes
+  useEffect(() => {
+    if (aiPatternFunctionsRef.current) {
+      aiPatternFunctionsRef.current.updateGrid(grid);
+    }
+  }, [grid]);
 
   const executeFunction = async (functionName: string): Promise<any> => {
     setExecutingFunction(functionName);
@@ -150,37 +170,46 @@ export default function PatternFunctionPanel({
     try {
       let result: any = { success: false, message: 'Function not implemented' };
 
-      switch (functionName) {
-        case 'fillGrid':
-          result = fillGrid();
-          break;
-        case 'shuffleGrid':
-          result = shuffleGrid();
-          break;
-        case 'clearGrid':
-          result = clearGrid();
-          break;
-        case 'rotateAllTiles':
-          result = rotateAllTiles();
-          break;
-        case 'findDuplicates':
-          result = findDuplicates();
-          break;
-        case 'removeDuplicates':
-          result = removeDuplicates();
-          break;
-        case 'analyzeConnections':
-          result = analyzeConnections();
-          break;
-        case 'pairRotationFamilies':
-          result = pairRotationFamilies();
-          break;
-        case 'pairMirrorFamilies':
-          result = pairMirrorFamilies();
-          break;
-        // Edge matching functions would be handled by existing AI system
-        default:
-          result = { success: false, message: `Function ${functionName} not implemented in manual mode` };
+      // Check if it's an edge matching function that should use AI pattern functions
+      const edgeMatchingFunctions = [
+        'optimizeEdgeMatching', 'buildLateralEdges', 'buildBottomEdges', 
+        'createBeautifulPattern', 'logEdgeSignatures'
+      ];
+
+      if (edgeMatchingFunctions.includes(functionName) && aiPatternFunctionsRef.current) {
+        result = await aiPatternFunctionsRef.current.executeFunction(functionName);
+      } else {
+        // Handle other functions locally
+        switch (functionName) {
+          case 'fillGrid':
+            result = fillGrid();
+            break;
+          case 'shuffleGrid':
+            result = shuffleGrid();
+            break;
+          case 'clearGrid':
+            result = clearGrid();
+            break;
+          case 'rotateAllTiles':
+            result = rotateAllTiles();
+            break;
+          case 'findDuplicates':
+            result = findDuplicates();
+            break;
+          case 'removeDuplicates':
+          case 'analyzeConnections':
+          case 'pairRotationFamilies':
+          case 'pairMirrorFamilies':
+            // These use AI pattern functions
+            if (aiPatternFunctionsRef.current) {
+              result = await aiPatternFunctionsRef.current.executeFunction(functionName);
+            } else {
+              result = { success: false, message: 'AI pattern functions not initialized' };
+            }
+            break;
+          default:
+            result = { success: false, message: `Function ${functionName} not implemented` };
+        }
       }
 
       setLastResult(result.message || `${functionName} completed`);
@@ -343,13 +372,7 @@ export default function PatternFunctionPanel({
     };
   };
 
-  const pairRotationFamilies = () => {
-    return { success: false, message: 'Rotation family pairing requires advanced tile analysis - use AI function' };
-  };
-
-  const pairMirrorFamilies = () => {
-    return { success: false, message: 'Mirror family pairing requires advanced tile analysis - use AI function' };
-  };
+  // Removed pairRotationFamilies and pairMirrorFamilies - now handled by AI pattern functions
 
   const categories = ['edge-matching', 'organization', 'analysis', 'utility'] as const;
   const categoryNames = {

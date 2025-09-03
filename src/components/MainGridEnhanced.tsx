@@ -302,7 +302,7 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
   // Update duplicate detection when grid changes
   useEffect(() => {
     detectDuplicates();
-  }, [grid, detectDuplicates]);
+  }, [grid]);
 
   // Drag and Drop handlers for group dragging
   const handleDragStart = (e: React.DragEvent, cell: GridCell) => {

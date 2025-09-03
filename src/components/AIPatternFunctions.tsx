@@ -42,7 +42,12 @@ export class AIPatternFunctions {
   // Update grid state when external changes occur
   public updateGrid(newGrid: GridCell[]): void {
     this.grid = newGrid;
-    this.initializeEdgeMatching();
+    if (this.edgeMatching) {
+      // Update the grid reference in the existing instance
+      (this.edgeMatching as any).grid = newGrid;
+    } else {
+      this.initializeEdgeMatching();
+    }
   }
 
   // 1. OPTIMIZE EDGE MATCHING - AI callable
@@ -393,12 +398,121 @@ export class AIPatternFunctions {
   }
 
   public async pairMirrorFamilies(): Promise<PatternFunctionResult> {
-    // Placeholder for mirror family logic
-    return { 
-      success: false, 
-      message: 'Mirror family pairing requires tile geometry analysis - feature coming soon',
-      gridState: [...this.grid]
-    };
+    try {
+      // Group tiles by their mirror relationships
+      const mirrorFamilies: Map<string, TileData[]> = new Map();
+      const processedTiles = new Set<string>();
+      
+      // First, collect all tiles from the grid
+      const usedTiles = new Set<string>();
+      this.grid.forEach(cell => {
+        if (cell.tile) {
+          usedTiles.add(cell.tile.id);
+        }
+      });
+
+      // Create mirror families based on mirrorH and mirrorV relationships
+      this.allTiles.forEach(tile => {
+        if (!processedTiles.has(tile.id)) {
+          const family = [tile];
+          processedTiles.add(tile.id);
+          
+          // Find horizontal mirror if it exists and is different
+          if (tile.mirrorH && tile.mirrorH !== tile.id) {
+            const mirrorHTile = this.allTiles.find(t => t.id === tile.mirrorH);
+            if (mirrorHTile && !processedTiles.has(mirrorHTile.id)) {
+              family.push(mirrorHTile);
+              processedTiles.add(mirrorHTile.id);
+            }
+          }
+          
+          // Find vertical mirror if it exists and is different
+          if (tile.mirrorV && tile.mirrorV !== tile.id) {
+            const mirrorVTile = this.allTiles.find(t => t.id === tile.mirrorV);
+            if (mirrorVTile && !processedTiles.has(mirrorVTile.id)) {
+              family.push(mirrorVTile);
+              processedTiles.add(mirrorVTile.id);
+            }
+          }
+          
+          // Only add families with more than 1 tile (actual mirror relationships)
+          if (family.length > 1) {
+            const familyKey = family.map(t => t.id).sort().join('-');
+            mirrorFamilies.set(familyKey, family);
+          }
+        }
+      });
+
+      if (mirrorFamilies.size === 0) {
+        return {
+          success: false,
+          message: 'No mirror families found in tile data',
+          gridState: [...this.grid]
+        };
+      }
+
+      // Place mirror families together on the grid
+      let totalTilesPlaced = 0;
+      let familiesArranged = 0;
+      const newGrid = [...this.grid];
+      let currentIndex = 0;
+      
+      mirrorFamilies.forEach((family, familyKey) => {
+        // Find a suitable area to place this family
+        const tilesInFamily = family.length;
+        
+        // Try to place family in a row if possible
+        for (let row = 0; row < this.gridHeight && familiesArranged < mirrorFamilies.size; row++) {
+          let availableInRow = 0;
+          let startCol = -1;
+          
+          // Count consecutive available slots in this row
+          for (let col = 0; col < this.gridWidth; col++) {
+            const cellIndex = row * this.gridWidth + col;
+            if (!newGrid[cellIndex].tile) {
+              if (startCol === -1) startCol = col;
+              availableInRow++;
+              if (availableInRow >= tilesInFamily) break;
+            } else {
+              availableInRow = 0;
+              startCol = -1;
+            }
+          }
+          
+          // If we found enough space, place the family
+          if (availableInRow >= tilesInFamily && startCol !== -1) {
+            family.forEach((tile, tileIndex) => {
+              const cellIndex = row * this.gridWidth + startCol + tileIndex;
+              if (cellIndex < newGrid.length) {
+                newGrid[cellIndex] = {
+                  ...newGrid[cellIndex],
+                  tile: tile,
+                  rotation: 0
+                };
+                totalTilesPlaced++;
+              }
+            });
+            familiesArranged++;
+            break;
+          }
+        }
+      });
+
+      this.updateGridState(newGrid);
+      
+      return {
+        success: true,
+        message: `Arranged ${familiesArranged} mirror families with ${totalTilesPlaced} total tiles`,
+        gridState: newGrid
+      };
+      
+    } catch (error) {
+      return {
+        success: false,
+        message: `Error pairing mirror families: ${error}`,
+        gridState: [...this.grid]
+      };
+    }
   }
 
   // 8. FUNCTION REGISTRY - Available functions for AI
@@ -467,50 +581,60 @@ export class AIPatternFunctions {
         name: 'pairMirrorFamilies',
         description: 'Organize tiles by mirror families together'
       }
-      },
-      {
-        name: 'buildBottomEdges',
-        description: 'Build vertical chains using two-segment edge matching'
-      },
-      {
-        name: 'createBeautifulPattern',
-        description: 'Complete algorithm: optimize + lateral + vertical chains'
-      },
-      {
-        name: 'logEdgeSignatures',
-        description: 'Debug helper: display edge signatures for all tiles'
-      },
-      {
-        name: 'customLateralFocus',
-        description: 'AI-designed: Strong horizontal flow with double lateral building'
-      },
-      {
-        name: 'customVerticalFocus',
-        description: 'AI-designed: Strong vertical flow with double vertical building'
-      }
     ];
   }
 
-  // 8. EXECUTE FUNCTION BY NAME - For AI dynamic calling
-  public async executeFunction(functionName: string, ...args: any[]): Promise<PatternFunctionResult> {
-    const functionMap: Record<string, () => Promise<PatternFunctionResult>> = {
-      'optimizeEdgeMatching': () => this.optimizeEdgeMatching(),
-      'buildLateralEdges': () => this.buildLateralEdges(),
-      'buildBottomEdges': () => this.buildBottomEdges(),
-      'createBeautifulPattern': () => this.createBeautifulPattern(),
-      'logEdgeSignatures': () => this.logEdgeSignatures(),
-      'customLateralFocus': () => this.customLateralFocus(),
-      'customVerticalFocus': () => this.customVerticalFocus()
-    };
+  // 8. EXECUTE FUNCTION BY NAME - Called by AI chat
+  public async executeFunction(functionName: string, args: any = {}): Promise<PatternFunctionResult> {
+    console.log(`🤖 AI calling function: ${functionName}`, args);
+    console.log(`🎯 Grid has ${this.grid.filter(c => c.tile).length} tiles`);
+    
+    switch(functionName) {
+      // Edge Matching Functions
+      case 'optimizeEdgeMatching':
+        return this.optimizeEdgeMatching();
+      case 'buildLateralEdges':
+        return this.buildLateralEdges();
+      case 'buildBottomEdges':
+        return this.buildBottomEdges();
+      case 'createBeautifulPattern':
+        return this.createBeautifulPattern();
+      case 'logEdgeSignatures':
+        return this.logEdgeSignatures();
+      case 'customLateralFocus':
+        return this.customLateralFocus();
+      case 'customVerticalFocus':
+        return this.customVerticalFocus();
 
-    const func = functionMap[functionName];
-    if (!func) {
-      return {
-        success: false,
-        message: `Function '${functionName}' not found. Available: ${Object.keys(functionMap).join(', ')}`
-      };
+      // Organization Functions
+      case 'fillGrid':
+        return this.fillGrid();
+      case 'shuffleGrid':
+        return this.shuffleGrid();
+      case 'clearGrid':
+        return this.clearGrid();
+      case 'rotateAllTiles':
+        return this.rotateAllTiles();
+
+      // Analysis Functions
+      case 'findDuplicates':
+        return this.findDuplicates();
+      case 'analyzeConnections':
+        return this.analyzeConnections();
+      case 'removeDuplicates':
+        return this.removeDuplicates();
+
+      // Utility Functions
+      case 'pairRotationFamilies':
+        return this.pairRotationFamilies();
+      case 'pairMirrorFamilies':
+        return this.pairMirrorFamilies();
+
+      default:
+        return {
+          success: false,
+          message: `Unknown function: ${functionName}`
+        };
     }
-
-    return await func();
   }
 }
