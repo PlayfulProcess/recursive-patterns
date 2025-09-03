@@ -74,6 +74,7 @@ export default function Home() {
 
   const handleRowClick = (tile: TileData) => {
     setSelectedTile(tile);
+    // The highlighting will be handled by MainGridEnhanced component via the selectedTileFromTable prop
   };
 
   const handleColorChange = (edge: 'a' | 'b' | 'c', color: string) => {
@@ -153,6 +154,7 @@ export default function Home() {
           customColors={customColors}
           grid={mainGrid}
           onGridUpdate={setMainGrid}
+          selectedTileFromTable={selectedTile}
         />
 
         {/* AI Pattern Chat Popup */}

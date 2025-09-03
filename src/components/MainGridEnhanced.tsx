@@ -20,6 +20,7 @@ interface MainGridEnhancedProps {
   customColors: ColorScheme;
   grid?: GridCell[];
   onGridUpdate?: (newGrid: GridCell[]) => void;
+  selectedTileFromTable?: TileData;
 }
 
 interface GridCell {
@@ -29,7 +30,7 @@ interface GridCell {
   rotation?: number;
 }
 
-export default function MainGridEnhanced({ allTiles, customColors, grid: externalGrid, onGridUpdate }: MainGridEnhancedProps) {
+export default function MainGridEnhanced({ allTiles, customColors, grid: externalGrid, onGridUpdate, selectedTileFromTable }: MainGridEnhancedProps) {
   const [internalGrid, setInternalGrid] = useState<GridCell[]>(() => {
     const cells: GridCell[] = [];
     for (let y = 0; y < 8; y++) {
@@ -82,6 +83,19 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
       setTileRelationships(relationships);
     }
   }, [allTiles, tileRelationships]);
+
+  // Handle highlighting when a tile is selected from the table
+  useEffect(() => {
+    if (selectedTileFromTable) {
+      // Find all positions of this tile in the grid
+      const tilePositions = findTilePositions([selectedTileFromTable.id]);
+      if (tilePositions.length > 0) {
+        setHighlightedTiles(new Set(tilePositions));
+        setHighlightType('table-selected');
+        setTestMessage(`📋 Selected from table: ${selectedTileFromTable.id} (highlighted in purple)`);
+      }
+    }
+  }, [selectedTileFromTable]);
 
   // Helper function to get cell key
   const getCellKey = (cell: GridCell) => `${cell.x}-${cell.y}`;
@@ -863,7 +877,6 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
                     <TileRenderer
                       tile={cell.tile}
                       customColors={customColors}
-                      rotation={cell.rotation || 0}
                       seamless={true}
                     />
                   )}
