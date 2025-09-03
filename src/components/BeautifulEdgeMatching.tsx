@@ -185,16 +185,29 @@ export class BeautifulEdgeMatching {
     return score;
   }
 
-  // Find best tile for position - exact match of reference function
+  // Find best tile for position - exact match of reference implementation
   private findBestTileForPosition(targetPos: number, row: number, col: number, used: Set<number>): number | null {
-    let bestScore = -1;
+    let bestScore = -Infinity;
     let bestTilePos = null;
     
     // Check all unused positions
     for (let pos = 0; pos < this.grid.length; pos++) {
       if (used.has(pos)) continue;
       
-      const score = this.calculateEdgeMatchScore(pos, targetPos, row, col);
+      const tile = this.grid[pos].tile;
+      if (!tile) continue;
+      
+      let score = 0;
+      
+      // Mirror match (weight: 100)
+      if (this.isMirrorMatch(tile, targetPos, row, col)) score += 100;
+      
+      // Rotation match (weight: 50)
+      if (this.isRotationMatch(tile, targetPos, row, col)) score += 50;
+      
+      // Edge match (weight: 10 per matching edge)
+      score += this.countMatchingEdges(tile, targetPos, row, col) * 10;
+      
       if (score > bestScore) {
         bestScore = score;
         bestTilePos = pos;
@@ -202,6 +215,87 @@ export class BeautifulEdgeMatching {
     }
     
     return bestTilePos;
+  }
+
+  // Helper functions for reference implementation scoring
+  private isMirrorMatch(tile: any, targetPos: number, row: number, col: number): boolean {
+    // Check if tile mirrors any adjacent tiles
+    // This is a placeholder - needs actual mirror logic based on tile properties
+    return false; // TODO: Implement proper mirror detection
+  }
+
+  private isRotationMatch(tile: any, targetPos: number, row: number, col: number): boolean {
+    // Check if tile, when rotated, matches adjacent edges
+    // This is a placeholder - needs actual rotation matching logic
+    return false; // TODO: Implement proper rotation matching
+  }
+
+  private countMatchingEdges(tile: any, targetPos: number, row: number, col: number): number {
+    // Count how many edges match with neighbors
+    const tileColors = this.getTileEdgeColorsForTile(tile, 0); // No rotation for now
+    let matchCount = 0;
+    
+    // Check left neighbor
+    if (col > 0) {
+      const leftPos = targetPos - 1;
+      const leftColors = this.getTileEdgeColors(leftPos);
+      if (leftColors.right === tileColors.left) matchCount++;
+    }
+    
+    // Check top neighbor
+    if (row > 0) {
+      const topPos = targetPos - this.gridWidth;
+      const topColors = this.getTileEdgeColors(topPos);
+      if (topColors.bottom === tileColors.top) matchCount++;
+    }
+    
+    // Check right neighbor (if already placed)
+    if (col < this.gridWidth - 1) {
+      const rightPos = targetPos + 1;
+      if (rightPos < this.grid.length && this.grid[rightPos].tile) {
+        const rightColors = this.getTileEdgeColors(rightPos);
+        if (rightColors.left === tileColors.right) matchCount++;
+      }
+    }
+    
+    // Check bottom neighbor (if already placed)  
+    if (row < this.gridHeight - 1) {
+      const bottomPos = targetPos + this.gridWidth;
+      if (bottomPos < this.grid.length && this.grid[bottomPos].tile) {
+        const bottomColors = this.getTileEdgeColors(bottomPos);
+        if (bottomColors.top === tileColors.bottom) matchCount++;
+      }
+    }
+    
+    return matchCount;
+  }
+
+  // Helper to get edge colors for a specific tile (not position)
+  private getTileEdgeColorsForTile(tile: any, rotation: number): EdgeColors {
+    // Base edge signatures for rotation 0
+    let baseEdges = {
+      top: [tile.edge2, tile.edge2],    
+      right: [tile.edge3, tile.edge3],  
+      bottom: [tile.edge1, tile.edge3], 
+      left: [tile.edge1, tile.edge1]    
+    };
+    
+    // Apply rotation
+    const rotations = Math.floor(rotation / 90);
+    for (let r = 0; r < rotations; r++) {
+      const temp = baseEdges.top;
+      baseEdges.top = baseEdges.left;
+      baseEdges.left = baseEdges.bottom;
+      baseEdges.bottom = baseEdges.right;
+      baseEdges.right = temp;
+    }
+    
+    return {
+      top: baseEdges.top.join('-'),
+      right: baseEdges.right.join('-'),
+      bottom: baseEdges.bottom.join('-'),
+      left: baseEdges.left.join('-')
+    };
   }
 
   // 1. OPTIMIZE EDGE MATCHING - exact match of reference function

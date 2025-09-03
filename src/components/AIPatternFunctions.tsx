@@ -252,30 +252,46 @@ export class AIPatternFunctions {
     }
   }
 
-  // NEW ORGANIZATION FUNCTIONS
+  // FIXED ORGANIZATION FUNCTIONS
   public async fillGrid(): Promise<PatternFunctionResult> {
     if (this.allTiles.length === 0) {
       return { success: false, message: 'No tiles available to fill grid' };
     }
 
     const newGrid = [...this.grid];
-    const shuffledTiles = [...this.allTiles].sort(() => Math.random() - 0.5);
-    let tileIndex = 0;
+    const usedTileIds = new Set<string>();
+    
+    // First pass: identify already placed tiles
+    newGrid.forEach(cell => {
+      if (cell.tile) {
+        usedTileIds.add(cell.tile.id);
+      }
+    });
 
-    for (let i = 0; i < newGrid.length && tileIndex < shuffledTiles.length; i++) {
-      newGrid[i] = {
-        ...newGrid[i],
-        tile: shuffledTiles[tileIndex],
-        rotation: Math.floor(Math.random() * 4) * 90
-      };
-      tileIndex++;
+    // Second pass: fill empty cells with unused tiles only
+    const availableTiles = this.allTiles.filter(tile => !usedTileIds.has(tile.id));
+    let tileIndex = 0;
+    let filledCount = 0;
+
+    for (let i = 0; i < newGrid.length && tileIndex < availableTiles.length; i++) {
+      // Only fill empty cells
+      if (!newGrid[i].tile) {
+        newGrid[i] = {
+          ...newGrid[i],
+          tile: availableTiles[tileIndex],
+          rotation: 0 // Start with no rotation for deterministic placement
+        };
+        tileIndex++;
+        filledCount++;
+      }
     }
 
     this.grid = newGrid;
     this.onGridUpdate([...this.grid]);
+    
     return { 
       success: true, 
-      message: `Grid filled with ${Math.min(newGrid.length, shuffledTiles.length)} diverse tiles`,
+      message: `Grid filled: ${filledCount} new tiles placed (${newGrid.filter(c => c.tile).length} total, all unique)`,
       gridState: [...this.grid]
     };
   }
@@ -308,11 +324,22 @@ export class AIPatternFunctions {
   }
 
   public async clearGrid(): Promise<PatternFunctionResult> {
-    this.grid = this.grid.map(cell => ({ x: cell.x, y: cell.y }));
+    // Reset all cells to empty state
+    this.grid = this.grid.map(cell => ({ 
+      x: cell.x, 
+      y: cell.y, 
+      tile: undefined,
+      rotation: 0 
+    }));
+    
+    // Reinitialize edge matching to clear references
+    this.edgeMatching = null;
+    this.initializeEdgeMatching();
+    
     this.onGridUpdate([...this.grid]);
     return { 
       success: true, 
-      message: 'Grid cleared - all tiles removed',
+      message: 'Grid completely cleared - all tiles removed, references reset',
       gridState: [...this.grid]
     };
   }
