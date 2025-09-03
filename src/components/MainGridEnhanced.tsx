@@ -111,13 +111,13 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
   // Helper function to get highlight style based on type
   const getHighlightStyle = (type: string): string => {
     if (type.startsWith('mirror')) {
-      return 'ring-4 ring-green-400 ring-inset bg-green-400 bg-opacity-20 z-20';
+      return '!ring-8 !ring-green-500 !ring-inset !bg-green-500 !bg-opacity-80 !z-50 !relative !border-4 !border-green-400';
     } else if (type === 'rotation') {
-      return 'ring-4 ring-blue-400 ring-inset bg-blue-400 bg-opacity-20 z-20';
+      return '!ring-8 !ring-blue-500 !ring-inset !bg-blue-500 !bg-opacity-80 !z-50 !relative !border-4 !border-blue-400';
     } else if (type.startsWith('edge')) {
-      return 'ring-4 ring-orange-400 ring-inset bg-orange-400 bg-opacity-20 z-20';
+      return '!ring-8 !ring-orange-500 !ring-inset !bg-orange-500 !bg-opacity-80 !z-50 !relative !border-4 !border-orange-400';
     }
-    return 'ring-4 ring-purple-400 ring-inset bg-purple-400 bg-opacity-20 z-20';
+    return '!ring-8 !ring-purple-500 !ring-inset !bg-purple-500 !bg-opacity-80 !z-50 !relative !border-4 !border-purple-400';
   };
 
   // Handle keyboard navigation
@@ -302,6 +302,8 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
 
   // Test recursive functions - require a selected cell
   const testFindMirrorTile = (direction: 'horizontal' | 'vertical') => {
+    console.log('🪞 testFindMirrorTile called with direction:', direction);
+    
     if (!tileRelationships) {
       setTestMessage('❌ Tile relationships not loaded yet');
       return;
@@ -386,6 +388,8 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
   };
 
   const testFindEdgeMatches = (direction: 'north' | 'south' | 'east' | 'west') => {
+    console.log('🔗 testFindEdgeMatches called with direction:', direction);
+    
     if (!tileRelationships) {
       setTestMessage('❌ Tile relationships not loaded yet');
       return;
@@ -405,6 +409,7 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
       // Highlight all edge matches in the grid
       const edgeIds = edgeMatches.map(t => t.id);
       const edgePositions = findTilePositions(edgeIds);
+      console.log('🎯 Setting highlights:', edgePositions, 'type:', `edge-${direction}`);
       setHighlightedTiles(new Set(edgePositions));
       setHighlightType(`edge-${direction}`);
       
@@ -784,6 +789,11 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
               const isFocused = focusedCell?.x === cell.x && focusedCell?.y === cell.y;
               const isDuplicate = showDuplicates && cell.tile && duplicates.has(cell.tile.id);
               const isHighlighted = highlightedTiles.has(cellKey);
+              
+              // Debug log for highlighting
+              if (isHighlighted) {
+                console.log('🎨 Applying highlight to cell:', cellKey, 'type:', highlightType);
+              }
               
               return (
                 <div
