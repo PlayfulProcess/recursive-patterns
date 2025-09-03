@@ -116,6 +116,11 @@ What would you like to do with your tiles?`,
       const aiResponse = await fetch('/api/ai-chat');
       console.log('🤖 AI Chat endpoint status:', aiResponse.status);
       
+      // Test simple endpoint
+      const simpleResponse = await fetch('/api/ai-chat-simple');
+      const simpleData = await simpleResponse.json();
+      console.log('🧪 Simple endpoint:', simpleResponse.status, simpleData);
+      
       if (aiResponse.ok) {
         const aiData = await aiResponse.json();
         console.log('✅ AI Chat endpoint:', aiData);
@@ -314,10 +319,59 @@ What would you like to do with your tiles?`,
                 </div>
               </div>
               
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
                 <div className="text-xs text-gray-300">
-                  {grid.filter(cell => cell.tile).length} tiles loaded
+                  {grid.filter(cell => cell.tile).length} tiles
                 </div>
+                <button
+                  onClick={async () => {
+                    console.log('=== TESTING ALL ENDPOINTS ===');
+                    
+                    // Test simple-post endpoint
+                    try {
+                      console.log('1. Testing /api/simple-post GET...');
+                      const getRes = await fetch('/api/simple-post');
+                      console.log('   GET:', getRes.status, await getRes.text());
+                      
+                      console.log('2. Testing /api/simple-post POST...');
+                      const postRes = await fetch('/api/simple-post', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ test: 'data' })
+                      });
+                      console.log('   POST:', postRes.status, await postRes.text());
+                    } catch (e) {
+                      console.error('Simple-post test failed:', e);
+                    }
+                    
+                    // Test ai-chat endpoint
+                    try {
+                      console.log('3. Testing /api/ai-chat POST...');
+                      const aiRes = await fetch('/api/ai-chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                          messages: [{ role: 'user', content: 'test' }] 
+                        })
+                      });
+                      console.log('   AI-Chat POST:', aiRes.status);
+                      if (aiRes.ok) {
+                        const data = await aiRes.json();
+                        console.log('   Response:', data);
+                      } else {
+                        console.log('   Error text:', await aiRes.text());
+                      }
+                    } catch (e) {
+                      console.error('AI-chat test failed:', e);
+                    }
+                    
+                    console.log('=== TESTS COMPLETE ===');
+                  }}
+                  className="text-xs bg-yellow-600 hover:bg-yellow-500 px-2 py-1 rounded text-white"
+                  title="Debug API Routes"
+                >
+                  Debug
+                </button>
                 <button
                   onClick={testConnection}
                   className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-gray-300"
