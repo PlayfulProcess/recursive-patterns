@@ -83,6 +83,26 @@ export default function Home() {
     }));
   };
 
+  // Fill grid with tiles for AI testing
+  useEffect(() => {
+    if (tiles.length > 0 && mainGrid.every(cell => !cell.tile)) {
+      console.log('🎯 Filling grid with tiles for AI testing...');
+      const newGrid = [...mainGrid];
+      
+      // Fill first 20 cells with random tiles
+      for (let i = 0; i < Math.min(20, tiles.length, newGrid.length); i++) {
+        newGrid[i] = {
+          ...newGrid[i],
+          tile: tiles[i % tiles.length],
+          rotation: 0
+        };
+      }
+      
+      setMainGrid(newGrid);
+      console.log('✅ Grid filled with', newGrid.filter(c => c.tile).length, 'tiles');
+    }
+  }, [tiles, mainGrid]);
+
   return (
     <div className="min-h-screen p-8 bg-gray-900">
       <div className="max-w-7xl mx-auto">
@@ -121,6 +141,8 @@ export default function Home() {
         <MainGridEnhanced 
           allTiles={tiles}
           customColors={customColors}
+          grid={mainGrid}
+          onGridUpdate={setMainGrid}
         />
 
         {/* AI Pattern Chat Popup */}

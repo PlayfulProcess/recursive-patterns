@@ -9,6 +9,8 @@ import { ColorScheme } from '@/components/ColorPalette';
 interface MainGridEnhancedProps {
   allTiles: TileData[];
   customColors: ColorScheme;
+  grid?: GridCell[];
+  onGridUpdate?: (newGrid: GridCell[]) => void;
 }
 
 interface GridCell {
@@ -18,8 +20,8 @@ interface GridCell {
   rotation?: number;
 }
 
-export default function MainGridEnhanced({ allTiles, customColors }: MainGridEnhancedProps) {
-  const [grid, setGrid] = useState<GridCell[]>(() => {
+export default function MainGridEnhanced({ allTiles, customColors, grid: externalGrid, onGridUpdate }: MainGridEnhancedProps) {
+  const [internalGrid, setInternalGrid] = useState<GridCell[]>(() => {
     const cells: GridCell[] = [];
     for (let y = 0; y < 8; y++) {
       for (let x = 0; x < 12; x++) {
@@ -28,6 +30,10 @@ export default function MainGridEnhanced({ allTiles, customColors }: MainGridEnh
     }
     return cells;
   });
+
+  // Use external grid if provided, otherwise use internal
+  const grid = externalGrid || internalGrid;
+  const setGrid = onGridUpdate || setInternalGrid;
   
   const [duplicates, setDuplicates] = useState<Set<string>>(new Set());
   const [showDuplicates, setShowDuplicates] = useState(false);

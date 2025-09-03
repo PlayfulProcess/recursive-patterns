@@ -195,6 +195,9 @@ export class AIPatternFunctions {
 
   // 7. EXECUTE FUNCTION BY NAME - Called by AI chat
   public async executeFunction(functionName: string, args: any = {}): Promise<PatternFunctionResult> {
+    console.log(`🤖 AI calling function: ${functionName}`, args);
+    console.log(`🎯 Grid has ${this.grid.filter(c => c.tile).length} tiles`);
+    
     switch(functionName) {
       case 'optimizeEdgeMatching':
         return this.optimizeEdgeMatching();
