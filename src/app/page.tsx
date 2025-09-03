@@ -87,25 +87,29 @@ export default function Home() {
   useEffect(() => {
     if (tiles.length > 0 && mainGrid.every(cell => !cell.tile)) {
       console.log('🎯 Filling grid with diverse tiles for AI testing...');
+      console.log('📊 Available tiles:', tiles.length);
+      
       const newGrid = [...mainGrid];
       
-      // Fill more cells with better variety - use all available tiles
+      // Use exactly the number of available tiles (no duplicates)
       const maxTiles = Math.min(tiles.length, newGrid.length);
       
       // Shuffle tiles for better diversity
       const shuffledTiles = [...tiles].sort(() => Math.random() - 0.5);
       
+      // Fill grid with unique tiles (1-to-1 mapping)
       for (let i = 0; i < maxTiles; i++) {
         newGrid[i] = {
           ...newGrid[i],
-          tile: shuffledTiles[i % shuffledTiles.length],
-          rotation: Math.floor(Math.random() * 4) * 90 // Random rotation too
+          tile: shuffledTiles[i], // Use exact tile, not modulo
+          rotation: Math.floor(Math.random() * 4) * 90
         };
       }
       
       setMainGrid(newGrid);
-      console.log('✅ Grid filled with', newGrid.filter(c => c.tile).length, 'diverse tiles');
-      console.log('🎲 Used', new Set(newGrid.filter(c => c.tile).map(c => c.tile?.name)).size, 'unique tile types');
+      console.log('✅ Grid filled with', newGrid.filter(c => c.tile).length, 'tiles');
+      console.log('🎲 Used', new Set(newGrid.filter(c => c.tile).map(c => c.tile?.id)).size, 'unique tile IDs');
+      console.log('🧩 First few tile IDs:', newGrid.filter(c => c.tile).slice(0, 5).map(c => c.tile?.id));
     }
   }, [tiles, mainGrid]);
 

@@ -65,6 +65,7 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
   const [testMessage, setTestMessage] = useState<string>('');
   const [highlightedTiles, setHighlightedTiles] = useState<Set<string>>(new Set());
   const [highlightType, setHighlightType] = useState<string>('');
+  const [showTileIDs, setShowTileIDs] = useState<boolean>(false);
   const gridRef = useRef<HTMLDivElement>(null);
 
   // Sync external grid changes to internal state
@@ -106,6 +107,20 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
   const clearHighlights = () => {
     setHighlightedTiles(new Set());
     setHighlightType('');
+  };
+
+  // Helper function to get selected tile info
+  const getSelectedTileInfo = () => {
+    if (selectedCells.size === 1) {
+      const selectedCell = getCellFromKey(Array.from(selectedCells)[0]);
+      if (selectedCell?.tile) {
+        return {
+          id: selectedCell.tile.id,
+          position: `${selectedCell.x}-${selectedCell.y}`
+        };
+      }
+    }
+    return null;
   };
 
   // Helper function to get highlight style based on type
@@ -726,6 +741,35 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
               Edge ←
             </button>
           </div>
+
+          {/* Tile ID Toggle */}
+          <div className="mt-3 flex items-center gap-3">
+            <button 
+              onClick={() => setShowTileIDs(!showTileIDs)}
+              className={`flex items-center gap-2 px-3 py-2 rounded transition-all duration-200 text-sm font-semibold ${
+                showTileIDs 
+                  ? 'bg-yellow-600 text-white hover:bg-yellow-500' 
+                  : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+              }`}
+            >
+              <span>{showTileIDs ? '🏷️' : '👁️'}</span>
+              {showTileIDs ? 'Hide IDs' : 'Show Tile IDs'}
+            </button>
+            
+            {/* Selected tile info */}
+            {(() => {
+              const selectedInfo = getSelectedTileInfo();
+              return selectedInfo ? (
+                <div className="flex items-center gap-2 px-3 py-2 bg-blue-900 rounded text-sm">
+                  <span className="text-blue-300">Selected:</span>
+                  <span className="font-mono text-white">{selectedInfo.id}</span>
+                  <span className="text-blue-400 text-xs">({selectedInfo.position})</span>
+                </div>
+              ) : (
+                <div className="text-gray-500 text-sm">No tile selected</div>
+              );
+            })()}
+          </div>
           
           {/* Test Message Display */}
           {testMessage && (
@@ -822,6 +866,24 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
                       rotation={cell.rotation || 0}
                       seamless={true}
                     />
+                  )}
+                  
+                  {/* Show tile ID when highlighted and toggle is on */}
+                  {showTileIDs && isHighlighted && cell.tile && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="bg-black bg-opacity-90 text-white text-xs px-2 py-1 rounded font-mono border border-white shadow-lg">
+                        {cell.tile.id}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Show selected tile ID when toggle is on */}
+                  {showTileIDs && isSelected && cell.tile && !isHighlighted && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="bg-blue-600 bg-opacity-90 text-white text-xs px-2 py-1 rounded font-mono border border-blue-300 shadow-lg">
+                        {cell.tile.id}
+                      </div>
+                    </div>
                   )}
                   {!cell.tile && (
                     <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">
