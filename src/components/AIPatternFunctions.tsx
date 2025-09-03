@@ -193,7 +193,32 @@ export class AIPatternFunctions {
     }
   }
 
-  // 7. FUNCTION REGISTRY - Available functions for AI
+  // 7. EXECUTE FUNCTION BY NAME - Called by AI chat
+  public async executeFunction(functionName: string, args: any = {}): Promise<PatternFunctionResult> {
+    switch(functionName) {
+      case 'optimizeEdgeMatching':
+        return this.optimizeEdgeMatching();
+      case 'buildLateralEdges':
+        return this.buildLateralEdges();
+      case 'buildBottomEdges':
+        return this.buildBottomEdges();
+      case 'createBeautifulPattern':
+        return this.createBeautifulPattern();
+      case 'logEdgeSignatures':
+        return this.logEdgeSignatures();
+      case 'customLateralFocus':
+        return this.customLateralFocus();
+      case 'customVerticalFocus':
+        return this.customVerticalFocus();
+      default:
+        return {
+          success: false,
+          message: `Unknown function: ${functionName}`
+        };
+    }
+  }
+
+  // 8. FUNCTION REGISTRY - Available functions for AI
   public getAvailableFunctions(): Array<{name: string, description: string}> {
     return [
       {
