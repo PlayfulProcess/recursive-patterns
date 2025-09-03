@@ -404,8 +404,31 @@ export class BeautifulEdgeMatching {
           totalMatches++;
           console.log(`  ✓ Shifted tile from ${foundPos} to ${neighborPos}`);
         } else {
-          console.log(`  ⚠ No match found for anchor ${anchorPos} (need ${needSig}), skipping to continue chain`);
-          // Skip to next anchor - this is the "skip to the next always" behavior
+          // Fallback: Try to find partial matches (single edge match)
+          const [needA, needB] = needSig.split('-');
+          let partialMatch = null;
+          
+          for (let searchPos = 0; searchPos < this.grid.length; searchPos++) {
+            if (searchPos % this.gridWidth === col) continue; // Skip same column
+            
+            const candidateEdges = this.getTileEdgeSignatures(searchPos);
+            const [candA, candB] = candidateEdges.top.split('-');
+            
+            // Accept if at least one edge matches
+            if (candA === needA || candB === needB || candA === needB || candB === needA) {
+              partialMatch = searchPos;
+              console.log(`  ~ Found partial match at ${searchPos} for anchor ${anchorPos} (${needSig} ≈ ${candidateEdges.top})`);
+              break;
+            }
+          }
+          
+          if (partialMatch !== null) {
+            this.shiftColumnUpSegment(partialMatch, neighborPos);
+            totalMatches++;
+            console.log(`  ✓ Used partial match from ${partialMatch} to ${neighborPos}`);
+          } else {
+            console.log(`  ⚠ No match found for anchor ${anchorPos} (need ${needSig}), skipping to continue chain`);
+          }
         }
       }
       

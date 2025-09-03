@@ -7,6 +7,7 @@ import ColorPalette, { ColorScheme } from '@/components/ColorPalette';
 import MiniPlayground from '@/components/MiniPlayground';
 import MainGridEnhanced from '@/components/MainGridEnhanced';
 import AIPatternChatPopup from '@/components/AIPatternChatPopup';
+import PatternFunctionPanel from '@/components/PatternFunctionPanel';
 
 interface GridCell {
   x: number;
@@ -83,23 +84,29 @@ export default function Home() {
     }));
   };
 
-  // Fill grid with tiles for AI testing
+  // Fill grid with diverse tiles for AI testing
   useEffect(() => {
     if (tiles.length > 0 && mainGrid.every(cell => !cell.tile)) {
-      console.log('🎯 Filling grid with tiles for AI testing...');
+      console.log('🎯 Filling grid with diverse tiles for AI testing...');
       const newGrid = [...mainGrid];
       
-      // Fill first 20 cells with random tiles
-      for (let i = 0; i < Math.min(20, tiles.length, newGrid.length); i++) {
+      // Fill more cells with better variety - use all available tiles
+      const maxTiles = Math.min(tiles.length, newGrid.length);
+      
+      // Shuffle tiles for better diversity
+      const shuffledTiles = [...tiles].sort(() => Math.random() - 0.5);
+      
+      for (let i = 0; i < maxTiles; i++) {
         newGrid[i] = {
           ...newGrid[i],
-          tile: tiles[i % tiles.length],
-          rotation: 0
+          tile: shuffledTiles[i % shuffledTiles.length],
+          rotation: Math.floor(Math.random() * 4) * 90 // Random rotation too
         };
       }
       
       setMainGrid(newGrid);
-      console.log('✅ Grid filled with', newGrid.filter(c => c.tile).length, 'tiles');
+      console.log('✅ Grid filled with', newGrid.filter(c => c.tile).length, 'diverse tiles');
+      console.log('🎲 Used', new Set(newGrid.filter(c => c.tile).map(c => c.tile?.name)).size, 'unique tile types');
     }
   }, [tiles, mainGrid]);
 
@@ -152,6 +159,16 @@ export default function Home() {
           onGridUpdate={setMainGrid}
           gridWidth={12}
           gridHeight={8}
+        />
+
+        {/* Pattern Function Panel */}
+        <PatternFunctionPanel
+          grid={mainGrid}
+          allTiles={tiles}
+          onGridUpdate={setMainGrid}
+          onFunctionExecute={(functionName, result) => {
+            console.log(`🔧 Manual function executed: ${functionName}`, result);
+          }}
         />
 
         {/* Mini Playground */}

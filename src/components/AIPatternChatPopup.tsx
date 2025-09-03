@@ -217,14 +217,26 @@ What would you like to do with your tiles?`,
 
       // Execute any function calls
       let functionResults: any[] = [];
+      console.log('🔍 Checking function calls:', data.functionCalls);
+      
       if (data.functionCalls && data.functionCalls.length > 0) {
+        console.log('🎯 Found', data.functionCalls.length, 'function calls to execute');
+        
         for (const funcCall of data.functionCalls) {
+          console.log('⚡ Executing function:', funcCall.name, 'with args:', funcCall.arguments);
+          
           const result = await executeFunction(funcCall.name, funcCall.arguments);
+          console.log('✅ Function result:', result);
+          
           functionResults.push({
             ...funcCall,
             result
           });
         }
+        
+        console.log('🚀 All functions executed, results:', functionResults);
+      } else {
+        console.log('❌ No function calls found in AI response');
       }
 
       // Add assistant response

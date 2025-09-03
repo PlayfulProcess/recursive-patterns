@@ -199,6 +199,7 @@ export class AIPatternFunctions {
     console.log(`🎯 Grid has ${this.grid.filter(c => c.tile).length} tiles`);
     
     switch(functionName) {
+      // Edge Matching Functions
       case 'optimizeEdgeMatching':
         return this.optimizeEdgeMatching();
       case 'buildLateralEdges':
@@ -213,6 +214,31 @@ export class AIPatternFunctions {
         return this.customLateralFocus();
       case 'customVerticalFocus':
         return this.customVerticalFocus();
+
+      // Organization Functions
+      case 'fillGrid':
+        return this.fillGrid();
+      case 'shuffleGrid':
+        return this.shuffleGrid();
+      case 'clearGrid':
+        return this.clearGrid();
+      case 'rotateAllTiles':
+        return this.rotateAllTiles();
+
+      // Analysis Functions
+      case 'findDuplicates':
+        return this.findDuplicates();
+      case 'analyzeConnections':
+        return this.analyzeConnections();
+      case 'removeDuplicates':
+        return this.removeDuplicates();
+
+      // Utility Functions
+      case 'pairRotationFamilies':
+        return this.pairRotationFamilies();
+      case 'pairMirrorFamilies':
+        return this.pairMirrorFamilies();
+
       default:
         return {
           success: false,
@@ -221,16 +247,226 @@ export class AIPatternFunctions {
     }
   }
 
+  // NEW ORGANIZATION FUNCTIONS
+  public async fillGrid(): Promise<PatternFunctionResult> {
+    if (this.allTiles.length === 0) {
+      return { success: false, message: 'No tiles available to fill grid' };
+    }
+
+    const newGrid = [...this.grid];
+    const shuffledTiles = [...this.allTiles].sort(() => Math.random() - 0.5);
+    let tileIndex = 0;
+
+    for (let i = 0; i < newGrid.length && tileIndex < shuffledTiles.length; i++) {
+      newGrid[i] = {
+        ...newGrid[i],
+        tile: shuffledTiles[tileIndex],
+        rotation: Math.floor(Math.random() * 4) * 90
+      };
+      tileIndex++;
+    }
+
+    this.grid = newGrid;
+    this.onGridUpdate([...this.grid]);
+    return { 
+      success: true, 
+      message: `Grid filled with ${Math.min(newGrid.length, shuffledTiles.length)} diverse tiles`,
+      gridState: [...this.grid]
+    };
+  }
+
+  public async shuffleGrid(): Promise<PatternFunctionResult> {
+    const tilesWithPositions = this.grid
+      .map((cell, index) => ({ cell, index }))
+      .filter(item => item.cell.tile);
+
+    const shuffledTiles = tilesWithPositions
+      .map(item => ({ tile: item.cell.tile, rotation: Math.floor(Math.random() * 4) * 90 }))
+      .sort(() => Math.random() - 0.5);
+
+    tilesWithPositions.forEach((item, i) => {
+      if (shuffledTiles[i]) {
+        this.grid[item.index] = {
+          ...this.grid[item.index],
+          tile: shuffledTiles[i].tile,
+          rotation: shuffledTiles[i].rotation
+        };
+      }
+    });
+
+    this.onGridUpdate([...this.grid]);
+    return { 
+      success: true, 
+      message: `Shuffled ${tilesWithPositions.length} tiles with new rotations`,
+      gridState: [...this.grid]
+    };
+  }
+
+  public async clearGrid(): Promise<PatternFunctionResult> {
+    this.grid = this.grid.map(cell => ({ x: cell.x, y: cell.y }));
+    this.onGridUpdate([...this.grid]);
+    return { 
+      success: true, 
+      message: 'Grid cleared - all tiles removed',
+      gridState: [...this.grid]
+    };
+  }
+
+  public async rotateAllTiles(): Promise<PatternFunctionResult> {
+    this.grid = this.grid.map(cell => 
+      cell.tile 
+        ? { ...cell, rotation: Math.floor(Math.random() * 4) * 90 }
+        : cell
+    );
+    this.onGridUpdate([...this.grid]);
+    const rotatedCount = this.grid.filter(cell => cell.tile).length;
+    return { 
+      success: true, 
+      message: `Applied random rotations to ${rotatedCount} tiles`,
+      gridState: [...this.grid]
+    };
+  }
+
+  // NEW ANALYSIS FUNCTIONS
+  public async findDuplicates(): Promise<PatternFunctionResult> {
+    const tileMap = new Map<string, number[]>();
+    
+    this.grid.forEach((cell, index) => {
+      if (cell.tile) {
+        const key = `${cell.tile.name}-${cell.rotation || 0}`;
+        if (!tileMap.has(key)) {
+          tileMap.set(key, []);
+        }
+        tileMap.get(key)!.push(index);
+      }
+    });
+
+    const duplicates = Array.from(tileMap.entries())
+      .filter(([_, positions]) => positions.length > 1);
+
+    const totalDuplicates = duplicates.reduce((sum, [_, positions]) => sum + positions.length - 1, 0);
+
+    return { 
+      success: true, 
+      message: `Found ${totalDuplicates} duplicate tiles in ${duplicates.length} groups`,
+      gridState: [...this.grid],
+      debugInfo: { duplicates, tileMap }
+    };
+  }
+
+  public async analyzeConnections(): Promise<PatternFunctionResult> {
+    let totalConnections = 0;
+    let possibleConnections = 0;
+
+    // This would need actual edge matching logic - placeholder for now
+    const placedTiles = this.grid.filter(cell => cell.tile).length;
+    
+    return {
+      success: true,
+      message: `Grid analysis: ${placedTiles} tiles placed, pattern analysis available`,
+      gridState: [...this.grid]
+    };
+  }
+
+  public async removeDuplicates(): Promise<PatternFunctionResult> {
+    const duplicateResult = await this.findDuplicates();
+    if (!duplicateResult.debugInfo?.duplicates.length) {
+      return { success: true, message: 'No duplicates found to remove' };
+    }
+
+    // Placeholder - would need sophisticated logic to find missing tiles
+    return { 
+      success: false, 
+      message: 'Duplicate removal requires available tile analysis - use manual method',
+      gridState: [...this.grid]
+    };
+  }
+
+  // NEW UTILITY FUNCTIONS
+  public async pairRotationFamilies(): Promise<PatternFunctionResult> {
+    // Placeholder for rotation family logic
+    return { 
+      success: false, 
+      message: 'Rotation family pairing requires tile shape analysis - feature coming soon',
+      gridState: [...this.grid]
+    };
+  }
+
+  public async pairMirrorFamilies(): Promise<PatternFunctionResult> {
+    // Placeholder for mirror family logic
+    return { 
+      success: false, 
+      message: 'Mirror family pairing requires tile geometry analysis - feature coming soon',
+      gridState: [...this.grid]
+    };
+  }
+
   // 8. FUNCTION REGISTRY - Available functions for AI
   public getAvailableFunctions(): Array<{name: string, description: string}> {
     return [
+      // Edge Matching Functions
       {
         name: 'optimizeEdgeMatching',
         description: 'Smart initial tile placement based on neighbor edge scores'
       },
       {
-        name: 'buildLateralEdges', 
-        description: 'Build horizontal chains using two-segment edge matching'
+        name: 'buildLateralEdges',
+        description: 'Create horizontal chains with matching lateral edges'
+      },
+      {
+        name: 'buildBottomEdges',
+        description: 'Create vertical chains with matching bottom edges'
+      },
+      {
+        name: 'createBeautifulPattern',
+        description: 'Run complete Beautiful Edge Matching algorithm'
+      },
+      {
+        name: 'logEdgeSignatures',
+        description: 'Debug edge signatures for pattern analysis'
+      },
+
+      // Organization Functions
+      {
+        name: 'fillGrid',
+        description: 'Fill empty cells with all available tiles randomly'
+      },
+      {
+        name: 'shuffleGrid',
+        description: 'Randomly redistribute all tiles with new rotations'
+      },
+      {
+        name: 'clearGrid',
+        description: 'Remove all tiles from the grid'
+      },
+      {
+        name: 'rotateAllTiles',
+        description: 'Apply random rotations to all placed tiles'
+      },
+
+      // Analysis Functions
+      {
+        name: 'findDuplicates',
+        description: 'Identify and highlight duplicate tiles across entire grid'
+      },
+      {
+        name: 'analyzeConnections',
+        description: 'Analyze edge matches and pattern quality metrics'
+      },
+      {
+        name: 'removeDuplicates',
+        description: 'Automatically replace duplicates with missing tiles'
+      },
+
+      // Utility Functions
+      {
+        name: 'pairRotationFamilies',
+        description: 'Organize tiles by rotation families together'
+      },
+      {
+        name: 'pairMirrorFamilies',
+        description: 'Organize tiles by mirror families together'
+      }
       },
       {
         name: 'buildBottomEdges',

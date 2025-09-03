@@ -33,7 +33,13 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
 
   // Use external grid if provided, otherwise use internal
   const grid = externalGrid || internalGrid;
-  const setGrid = onGridUpdate || setInternalGrid;
+  const setGrid = (newGrid: GridCell[]) => {
+    if (onGridUpdate) {
+      onGridUpdate(newGrid); // Update external state
+    } else {
+      setInternalGrid(newGrid); // Update internal state
+    }
+  };
   
   const [duplicates, setDuplicates] = useState<Set<string>>(new Set());
   const [showDuplicates, setShowDuplicates] = useState(false);
@@ -47,6 +53,13 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
   const [dropTargetCell, setDropTargetCell] = useState<GridCell | null>(null);
   const [lastSelectedCell, setLastSelectedCell] = useState<GridCell | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+
+  // Sync external grid changes to internal state
+  useEffect(() => {
+    if (externalGrid && externalGrid !== internalGrid) {
+      setInternalGrid([...externalGrid]);
+    }
+  }, [externalGrid]);
 
   // Helper function to get cell key
   const getCellKey = (cell: GridCell) => `${cell.x}-${cell.y}`;
