@@ -5,7 +5,7 @@ import TileRenderer from '@/components/TileRenderer';
 import TileSelector from '@/components/TileSelector';
 import { TileData } from '@/components/CSVTable';
 import { ColorScheme } from '@/components/ColorPalette';
-import { fillGrid } from './CoreFunctions';
+import { fillGrid, optimizeEdgeMatching } from './CoreFunctions';
 
 interface MainGridEnhancedProps {
   allTiles: TileData[];
@@ -240,6 +240,12 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
     setDuplicates(new Set());
   };
 
+  const runEdgeMatching = () => {
+    // Run the optimize edge matching function
+    const newGrid = optimizeEdgeMatching(grid);
+    setGrid(newGrid);
+  };
+
 
   // Detect duplicate tiles
   const detectDuplicates = useCallback(() => {
@@ -421,38 +427,56 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
 
   return (
     <div className="bg-gray-800 rounded-lg shadow-lg p-8 mb-8">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-white">Main Grid (12×8 - 96 tiles)</h2>
-        <div className="flex gap-4 items-center">
-          <div className="text-sm text-gray-400">
-            Selected: {selectedCells.size} cells
-          </div>
-          {duplicates.size > 0 && (
-            <div className="text-sm text-yellow-400">
-              ⚠ {duplicates.size} duplicate{duplicates.size > 1 ? 's' : ''}
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-white">Main Grid (12×8 - 96 tiles)</h2>
+          <div className="flex gap-4 items-center">
+            <div className="text-sm text-gray-400">
+              Selected: {selectedCells.size} cells
             </div>
-          )}
-          <button 
-            onClick={() => setShowDuplicates(!showDuplicates)}
-            className={`px-3 py-1 text-white rounded text-sm transition-colors ${
-              showDuplicates ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-gray-600 hover:bg-gray-700'
-            }`}
-          >
-            {showDuplicates ? 'Hide' : 'Show'} Duplicates
-          </button>
-          {duplicates.size > 0 && (
+            {duplicates.size > 0 && (
+              <div className="text-sm text-yellow-400">
+                ⚠ {duplicates.size} duplicate{duplicates.size > 1 ? 's' : ''}
+              </div>
+            )}
             <button 
-              onClick={autoCorrectDuplicates}
-              className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
+              onClick={() => setShowDuplicates(!showDuplicates)}
+              className={`px-3 py-1 text-white rounded text-sm transition-colors ${
+                showDuplicates ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-gray-600 hover:bg-gray-700'
+              }`}
             >
-              Auto-Fix
+              {showDuplicates ? 'Hide' : 'Show'} Duplicates
             </button>
-          )}
+            {duplicates.size > 0 && (
+              <button 
+                onClick={autoCorrectDuplicates}
+                className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
+              >
+                Auto-Fix
+              </button>
+            )}
+          </div>
+        </div>
+        
+        {/* Pattern Function Buttons - Top of Grid */}
+        <div className="flex gap-3">
           <button 
             onClick={fillGridWithAllTiles}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-purple-700 text-white rounded-lg
+                     hover:bg-purple-600 transition-all duration-200 font-semibold
+                     hover:scale-[1.02] active:scale-[0.98]"
           >
+            <span>📦</span>
             Fill All Tiles
+          </button>
+          <button 
+            onClick={runEdgeMatching}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-700 text-white rounded-lg
+                     hover:bg-purple-600 transition-all duration-200 font-semibold
+                     hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <span>🎨</span>
+            Optimize Edge Matching
           </button>
         </div>
       </div>
