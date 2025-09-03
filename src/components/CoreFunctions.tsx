@@ -286,8 +286,153 @@ function getTileEdgeColors(tile: any, rotation: number = 0) {
   return edges;
 }
 
+/**
+ * PHASE 1: RECURSIVE RELATIONSHIP FUNCTIONS
+ * Build tile relationship maps from CSV data for recursive pattern generation
+ */
+
+// Tile relationship maps built from CSV data
+interface TileRelationships {
+  mirrorMap: Map<string, { horizontal: string; vertical: string }>;
+  shapeGroups: Map<string, TileData[]>;
+  edgeIndex: Map<string, TileData[]>;
+  tileById: Map<string, TileData>;
+}
+
+// Build comprehensive tile relationships from CSV data
+export function buildTileRelationships(allTiles: TileData[]): TileRelationships {
+  const mirrorMap = new Map<string, { horizontal: string; vertical: string }>();
+  const shapeGroups = new Map<string, TileData[]>();
+  const edgeIndex = new Map<string, TileData[]>();
+  const tileById = new Map<string, TileData>();
+
+  // Process each tile to build relationship maps
+  allTiles.forEach(tile => {
+    // Build mirror relationships map
+    mirrorMap.set(tile.id, {
+      horizontal: tile.mirrorH || '',
+      vertical: tile.mirrorV || ''
+    });
+
+    // Build tile lookup by ID
+    tileById.set(tile.id, tile);
+
+    // Group tiles by shape family (same base pattern)
+    if (!shapeGroups.has(tile.shape || '')) {
+      shapeGroups.set(tile.shape || '', []);
+    }
+    shapeGroups.get(tile.shape || '')?.push(tile);
+
+    // Index tiles by edge patterns for matching
+    const edges = [tile.edge1, tile.edge2, tile.edge3, tile.edge4];
+    edges.forEach((edge, i) => {
+      const edgeKey = `${i}-${edge}`; // position-color
+      if (!edgeIndex.has(edgeKey)) {
+        edgeIndex.set(edgeKey, []);
+      }
+      edgeIndex.get(edgeKey)?.push(tile);
+    });
+  });
+
+  console.log('🔗 Built tile relationships:', {
+    mirrors: mirrorMap.size,
+    shapes: shapeGroups.size,
+    edgePatterns: edgeIndex.size
+  });
+
+  return { mirrorMap, shapeGroups, edgeIndex, tileById };
+}
+
+/**
+ * RECURSIVE FUNCTION 1: findMirrorTile
+ * Find and return the mirror tile for a given tile in specified direction
+ */
+export function findMirrorTile(
+  currentTile: TileData,
+  direction: 'horizontal' | 'vertical',
+  relationships: TileRelationships
+): TileData | null {
+  
+  const mirrorInfo = relationships.mirrorMap.get(currentTile.id);
+  if (!mirrorInfo) {
+    console.log(`⚠️ No mirror info found for tile: ${currentTile.id}`);
+    return null;
+  }
+
+  const mirrorId = direction === 'horizontal' ? mirrorInfo.horizontal : mirrorInfo.vertical;
+  if (!mirrorId) {
+    console.log(`⚠️ No ${direction} mirror found for tile: ${currentTile.id}`);
+    return null;
+  }
+
+  const mirrorTile = relationships.tileById.get(mirrorId);
+  if (!mirrorTile) {
+    console.log(`⚠️ Mirror tile not found: ${mirrorId}`);
+    return null;
+  }
+
+  console.log(`🪞 Found ${direction} mirror: ${currentTile.id} -> ${mirrorTile.id}`);
+  return mirrorTile;
+}
+
+/**
+ * RECURSIVE FUNCTION 2: findRotationFamily  
+ * Find all tiles in the same rotation family (same shape, different rotations)
+ */
+export function findRotationFamily(
+  currentTile: TileData,
+  relationships: TileRelationships
+): TileData[] {
+  
+  const shapeFamily = relationships.shapeGroups.get(currentTile.shape || '');
+  if (!shapeFamily) {
+    console.log(`⚠️ No shape family found for: ${currentTile.shape}`);
+    return [];
+  }
+
+  // Filter out the current tile to get rotation variants
+  const rotationVariants = shapeFamily.filter(tile => tile.id !== currentTile.id);
+  
+  console.log(`🔄 Found ${rotationVariants.length} rotation variants for shape: ${currentTile.shape}`);
+  return rotationVariants;
+}
+
+/**
+ * RECURSIVE FUNCTION 3: findEdgeMatches
+ * Find tiles that have matching edge colors for seamless connections
+ */
+export function findEdgeMatches(
+  currentTile: TileData,
+  direction: 'north' | 'south' | 'east' | 'west',
+  relationships: TileRelationships
+): TileData[] {
+  
+  // Map direction to edge index and get current tile's edge color
+  const edgeMap = { north: 0, west: 1, south: 2, east: 3 }; // edge-S, edge-W, edge-N, edge-E
+  const oppositeMap = { north: 2, south: 0, east: 1, west: 3 }; // opposite edges for matching
+  
+  const currentEdgeIndex = edgeMap[direction];
+  const oppositeEdgeIndex = oppositeMap[direction];
+  
+  const currentEdgeColor = [currentTile.edge1, currentTile.edge2, currentTile.edge3, currentTile.edge4][currentEdgeIndex];
+  
+  // Find tiles where opposite edge matches current tile's edge
+  const oppositeEdgeKey = `${oppositeEdgeIndex}-${currentEdgeColor}`;
+  const matchingTiles = relationships.edgeIndex.get(oppositeEdgeKey) || [];
+  
+  // Filter out the current tile
+  const validMatches = matchingTiles.filter(tile => tile.id !== currentTile.id);
+  
+  console.log(`🔗 Found ${validMatches.length} edge matches for ${direction} (${currentEdgeColor})`);
+  return validMatches;
+}
+
 // Export all functions for easy access
 export const CoreFunctions = {
   fillGrid,
-  optimizeEdgeMatching
+  optimizeEdgeMatching,
+  buildTileRelationships,
+  findMirrorTile,
+  findRotationFamily,
+  findEdgeMatches
 };
