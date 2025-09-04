@@ -272,12 +272,12 @@ function countMatchingEdges(
  * Get edge colors for a tile with rotation
  */
 function getTileEdgeColors(tile: any, rotation: number = 0) {
-  // Base edge structure: left triangle (edge1), top-right (edge2), bottom-right (edge3)
+  // Euclidean edge mapping: direct N,E,S,W
   let edges = {
-    top: tile.edge2,    // Top edge: from top-right triangle
-    right: tile.edge3,  // Right edge: from bottom-right triangle  
-    bottom: tile.edge1 + '-' + tile.edge3, // Bottom: composite edge
-    left: tile.edge1    // Left edge: from left triangle
+    top: tile.edgeN,     // North edge
+    right: tile.edgeE,   // East edge
+    bottom: tile.edgeS,  // South edge
+    left: tile.edgeW     // West edge
   };
   
   // Apply rotation (90-degree steps)
@@ -332,7 +332,7 @@ export function buildTileRelationships(allTiles: TileData[]): TileRelationships 
     shapeGroups.get(shapeKey)?.push(tile);
 
     // Index tiles by edge patterns for matching
-    const edges = [tile.edge1, tile.edge2, tile.edge3, tile.edge4];
+    const edges = [tile.edgeN, tile.edgeE, tile.edgeS, tile.edgeW];
     edges.forEach((edge, i) => {
       const edgeKey = `${i}-${edge}`; // position-color
       if (!edgeIndex.has(edgeKey)) {
@@ -417,13 +417,14 @@ export function findEdgeMatches(
 ): TileData[] {
   
   // Map direction to edge index and get current tile's edge color
-  const edgeMap = { north: 0, west: 1, south: 2, east: 3 }; // edge-S, edge-W, edge-N, edge-E
-  const oppositeMap = { north: 2, south: 0, east: 1, west: 3 }; // opposite edges for matching
+  // Direct Euclidean mapping: North=0, East=1, South=2, West=3
+  const edgeMap = { north: 0, east: 1, south: 2, west: 3 }; 
+  const oppositeMap = { north: 2, south: 0, east: 3, west: 1 }; // opposite edges for matching
   
   const currentEdgeIndex = edgeMap[direction];
   const oppositeEdgeIndex = oppositeMap[direction];
   
-  const currentEdgeColor = [currentTile.edge1, currentTile.edge2, currentTile.edge3, currentTile.edge4][currentEdgeIndex];
+  const currentEdgeColor = [currentTile.edgeN, currentTile.edgeE, currentTile.edgeS, currentTile.edgeW][currentEdgeIndex];
   
   // Find tiles where opposite edge matches current tile's edge
   const oppositeEdgeKey = `${oppositeEdgeIndex}-${currentEdgeColor}`;
@@ -606,7 +607,7 @@ function calculateEdgeMatchScore(grid: GridCell[]): number {
     if (col < gridWidth - 1) {
       const rightCell = grid[i + 1];
       if (rightCell.tile) {
-        if (cell.tile.edge4 === rightCell.tile.edge2) matches++;
+        if (cell.tile.edgeE === rightCell.tile.edgeW) matches++;
         total++;
       }
     }
@@ -615,7 +616,7 @@ function calculateEdgeMatchScore(grid: GridCell[]): number {
     if (row < 7) {
       const bottomCell = grid[i + gridWidth];
       if (bottomCell.tile) {
-        if (cell.tile.edge3 === bottomCell.tile.edge1) matches++;
+        if (cell.tile.edgeS === bottomCell.tile.edgeN) matches++;
         total++;
       }
     }
@@ -684,7 +685,7 @@ function calculateColorBalance(grid: GridCell[]): number {
   
   for (const cell of grid) {
     if (cell.tile) {
-      [cell.tile.edge1, cell.tile.edge2, cell.tile.edge3, cell.tile.edge4].forEach(edge => {
+      [cell.tile.edgeN, cell.tile.edgeE, cell.tile.edgeS, cell.tile.edgeW].forEach(edge => {
         if (edge === 'a') colorCounts.a++;
         else if (edge === 'b') colorCounts.b++;
         else if (edge === 'c') colorCounts.c++;

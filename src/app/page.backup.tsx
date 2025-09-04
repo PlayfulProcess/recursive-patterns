@@ -52,13 +52,11 @@ export default function Home() {
           const values = line.split(',');
           return {
             id: values[0]?.trim(),
-            // CSV columns: edge-S, edge-W, edge-N, edge-E
-            // Map to proper Euclidean positions:
-            edgeS: values[1]?.trim(), // edge-S from CSV → South (Bottom)
-            edgeW: values[2]?.trim(), // edge-W from CSV → West (Left)
-            edgeN: values[3]?.trim(), // edge-N from CSV → North (Top)
-            edgeE: values[4]?.trim(), // edge-E from CSV → East (Right)
-            shape: parseInt(values[5]?.trim()) || 0,
+            edge1: values[1]?.trim(), // edge-S from CSV
+            edge2: values[2]?.trim(), // edge-W from CSV
+            edge3: values[3]?.trim(), // edge-N from CSV
+            edge4: values[4]?.trim(), // edge-E from CSV
+            shape: parseInt(values[5]?.trim()) || 0, // Now numeric shape
             mirrorH: values[6]?.trim(),
             mirrorV: values[7]?.trim()
           };

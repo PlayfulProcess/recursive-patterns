@@ -59,7 +59,6 @@ export default function TileSelector({ allTiles, customColors, onTileSelect, onC
                   <TileRenderer
                     tile={tile}
                     customColors={customColors}
-                    rotation={0}
                     size={40}
                   />
                 </div>
@@ -77,7 +76,6 @@ export default function TileSelector({ allTiles, customColors, onTileSelect, onC
                   <TileRenderer
                     tile={selectedTile}
                     customColors={customColors}
-                    rotation={rotation}
                     size={96}
                   />
                 </div>
@@ -85,7 +83,7 @@ export default function TileSelector({ allTiles, customColors, onTileSelect, onC
 
               <div className="text-white text-sm mb-4">
                 <p><strong>ID:</strong> {selectedTile.id}</p>
-                <p><strong>Edges:</strong> {selectedTile.edge1}-{selectedTile.edge2}-{selectedTile.edge3}-{selectedTile.edge4}</p>
+                <p><strong>Edges:</strong> N:{selectedTile.edgeN} E:{selectedTile.edgeE} S:{selectedTile.edgeS} W:{selectedTile.edgeW}</p>
                 <p><strong>Rotation:</strong> {rotation}°</p>
               </div>
 

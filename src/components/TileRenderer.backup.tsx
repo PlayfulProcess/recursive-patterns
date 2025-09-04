@@ -22,7 +22,7 @@ const TileRenderer: React.FC<TileProps> = ({
     return <div className="w-full h-full bg-red-500 flex items-center justify-center text-white text-xs">No Tile</div>;
   }
 
-  const { id, edgeN, edgeE, edgeS, edgeW, shape } = tile;
+  const { id, edge1, edge2, edge3, edge4, shape } = tile;
   const getColor = (edge: string) => {
     if (customColors) {
       switch (edge) {
@@ -44,9 +44,10 @@ const TileRenderer: React.FC<TileProps> = ({
     }
   };
 
-  // Euclidean edge mapping - direct geographic positions:
-  // North=Top, East=Right, South=Bottom, West=Left
-  const edges = [edgeN, edgeE, edgeS, edgeW]; // [Top, Right, Bottom, Left] for SVG rendering
+  // Direct edge mapping - based on visual observation:
+  // edge-S appears on right, edge-W appears on bottom
+  // So: edge1(S)=Right, edge2(W)=Bottom, edge3(N)=Left, edge4(E)=Top
+  const edges = [edge4, edge1, edge2, edge3]; // [Top, Right, Bottom, Left] for SVG rendering
 
   if (seamless) {
     // Seamless mode for grid display - no borders, labels, or containers
@@ -57,22 +58,22 @@ const TileRenderer: React.FC<TileProps> = ({
         viewBox="0 0 100 100" 
         className="block"
       >
-        {/* Top triangle (North edge) */}
+        {/* Top triangle (edge-E) */}
         <polygon 
           points="0,0 100,0 50,50" 
           fill={getColor(edges[0])}
         />
-        {/* Right triangle (East edge) */}
+        {/* Right triangle (edge-S) */}
         <polygon 
           points="100,0 100,100 50,50" 
           fill={getColor(edges[1])}
         />
-        {/* Bottom triangle (South edge) */}
+        {/* Bottom triangle (edge-W) */}
         <polygon 
           points="100,100 0,100 50,50" 
           fill={getColor(edges[2])}
         />
-        {/* Left triangle (West edge) */}
+        {/* Left triangle (edge-N) */}
         <polygon 
           points="0,100 0,0 50,50" 
           fill={getColor(edges[3])}
@@ -92,22 +93,22 @@ const TileRenderer: React.FC<TileProps> = ({
         }}
       >
         <svg width={size} height={size} viewBox="0 0 100 100">
-          {/* Top triangle (North edge) */}
+          {/* Top triangle (edge-E) */}
           <polygon 
             points="0,0 100,0 50,50" 
             fill={getColor(edges[0])}
           />
-          {/* Right triangle (East edge) */}
+          {/* Right triangle (edge-S) */}
           <polygon 
             points="100,0 100,100 50,50" 
             fill={getColor(edges[1])}
           />
-          {/* Bottom triangle (South edge) */}
+          {/* Bottom triangle (edge-W) */}
           <polygon 
             points="100,100 0,100 50,50" 
             fill={getColor(edges[2])}
           />
-          {/* Left triangle (West edge) */}
+          {/* Left triangle (edge-N) */}
           <polygon 
             points="0,100 0,0 50,50" 
             fill={getColor(edges[3])}
