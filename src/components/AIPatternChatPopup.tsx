@@ -51,11 +51,12 @@ export default function AIPatternChatPopup({
     if (messages.length === 0) {
       setMessages([{
         role: 'assistant',
-        content: `Hey! I can help arrange your tiles. Try asking:
-• "Fill the grid"
-• "Match the edges"
-• "Find mirrors" 
-• "Show rotations"
+        content: `Hey! I can help create beautiful patterns. Try asking:
+• "Fill the grid" 
+• "Optimize edge matching"
+• "Optimize mirror placement"
+• "Balance colors"
+• "Analyze pattern quality"
 
 What pattern should we make?`,
         timestamp: new Date()

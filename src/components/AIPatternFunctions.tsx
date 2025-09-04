@@ -12,7 +12,10 @@ import {
   findMirrorTile,
   findRotationFamily, 
   findEdgeMatches,
-  TileRelationships
+  TileRelationships,
+  calculatePatternScore,
+  findAllMirrorPairs,
+  iterativeImprove
 } from './CoreFunctions';
 
 export interface FunctionResult {
@@ -185,6 +188,105 @@ export class AIPatternFunctions {
     }
   }
 
+  // AI FUNCTION 6: Optimize Mirror Placement
+  public async optimizeMirrorPlacement(args: { 
+    direction?: 'horizontal' | 'vertical' | 'both';
+    iterations?: number 
+  } = {}): Promise<FunctionResult> {
+    try {
+      const { direction = 'both', iterations = 5 } = args;
+      
+      // Score function that prioritizes mirror proximity and correct orientation
+      const scoreFn = (grid: GridCell[]) => {
+        const score = calculatePatternScore(grid, this.tileRelationships);
+        return score.mirrorScore; // Uses enhanced mirror scoring with orientation bonuses
+      };
+      
+      const optimizedGrid = iterativeImprove(this.grid, scoreFn, iterations);
+      const mirrorPairs = findAllMirrorPairs(optimizedGrid, this.tileRelationships);
+      
+      // Count correctly oriented pairs
+      const horizontalPairs = mirrorPairs.filter(p => p.direction === 'horizontal').length;
+      const verticalPairs = mirrorPairs.filter(p => p.direction === 'vertical').length;
+      
+      this.grid = optimizedGrid;
+      this.onGridUpdate(optimizedGrid);
+      
+      return {
+        success: true,
+        message: `Optimized mirror placement (${direction}). Found ${mirrorPairs.length} mirror pairs: ${horizontalPairs} horizontal, ${verticalPairs} vertical. Horizontal mirrors placed horizontally, vertical mirrors placed vertically.`,
+        gridState: optimizedGrid
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Error optimizing mirror placement: ${error}`
+      };
+    }
+  }
+
+  // AI FUNCTION 7: Balance Color Distribution
+  public async balanceColorDistribution(args: { 
+    targetBalance?: 'even' | 'gradient' | 'clustered' 
+  } = {}): Promise<FunctionResult> {
+    try {
+      const { targetBalance = 'even' } = args;
+      
+      // Score function that prioritizes color balance
+      const scoreFn = (grid: GridCell[]) => {
+        const score = calculatePatternScore(grid, this.tileRelationships);
+        return score.colorBalance; // Focus on color balance
+      };
+      
+      const optimizedGrid = iterativeImprove(this.grid, scoreFn, 8);
+      const finalScore = calculatePatternScore(optimizedGrid, this.tileRelationships);
+      
+      this.grid = optimizedGrid;
+      this.onGridUpdate(optimizedGrid);
+      
+      return {
+        success: true,
+        message: `Balanced color distribution (${targetBalance}). Color balance score: ${(finalScore.colorBalance * 100).toFixed(1)}%`,
+        gridState: optimizedGrid
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Error balancing colors: ${error}`
+      };
+    }
+  }
+
+  // AI FUNCTION 8: Analyze Pattern Quality
+  public async analyzePatternQuality(): Promise<FunctionResult> {
+    try {
+      const score = calculatePatternScore(this.grid, this.tileRelationships);
+      const mirrorPairs = findAllMirrorPairs(this.grid, this.tileRelationships);
+      
+      const analysis = `
+**Pattern Analysis:**
+• Edge Matching: ${(score.edgeScore * 100).toFixed(1)}%
+• Mirror Proximity: ${score.mirrorScore} points (${mirrorPairs.length} pairs)
+• Color Balance: ${(score.colorBalance * 100).toFixed(1)}%
+• Flow Continuity: ${score.flowScore} connections
+• **Overall Score: ${(score.totalScore * 100).toFixed(1)}%**
+
+**Recommendations:**
+${score.edgeScore < 0.5 ? '- Run edge matching optimization\n' : ''}${score.mirrorScore < 10 ? '- Optimize mirror placement\n' : ''}${score.colorBalance < 0.8 ? '- Balance color distribution\n' : ''}${score.totalScore > 0.7 ? '✅ Pattern looks great!' : '🔧 Pattern could be improved'}`;
+
+      return {
+        success: true,
+        message: analysis,
+        gridState: this.grid
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Error analyzing pattern: ${error}`
+      };
+    }
+  }
+
   // Execute function by name (for AI calls)
   public async executeFunction(functionName: string, args: any = {}): Promise<FunctionResult> {
     console.log(`🤖 AI calling function: ${functionName}`);
@@ -200,10 +302,16 @@ export class AIPatternFunctions {
         return this.findRotationFamily(args);
       case 'findEdgeMatches':
         return this.findEdgeMatches(args);
+      case 'optimizeMirrorPlacement':
+        return this.optimizeMirrorPlacement(args);
+      case 'balanceColorDistribution':
+        return this.balanceColorDistribution(args);
+      case 'analyzePatternQuality':
+        return this.analyzePatternQuality();
       default:
         return {
           success: false,
-          message: `Unknown function: ${functionName}. Available: fillGrid, optimizeEdgeMatching, findMirrorTile, findRotationFamily, findEdgeMatches`
+          message: `Unknown function: ${functionName}. Available: fillGrid, optimizeEdgeMatching, findMirrorTile, findRotationFamily, findEdgeMatches, optimizeMirrorPlacement, balanceColorDistribution, analyzePatternQuality`
         };
     }
   }
@@ -232,6 +340,18 @@ export class AIPatternFunctions {
       {
         name: 'optimizeEdgeMatching', 
         description: 'Optimize tile placement for beautiful edge patterns using reference algorithm'
+      },
+      {
+        name: 'optimizeMirrorPlacement',
+        description: 'Iteratively arrange tiles to maximize mirror pairs proximity (direction: horizontal/vertical/both, iterations: number)'
+      },
+      {
+        name: 'balanceColorDistribution',
+        description: 'Balance edge color distribution across grid for visual harmony (targetBalance: even/gradient/clustered)'
+      },
+      {
+        name: 'analyzePatternQuality',
+        description: 'Analyze current pattern quality and provide improvement recommendations'
       },
       {
         name: 'findMirrorTile',

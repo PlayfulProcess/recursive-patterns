@@ -19,9 +19,10 @@ export default function Home() {
   const [tiles, setTiles] = useState<TileData[]>([]);
   const [selectedTile, setSelectedTile] = useState<TileData | undefined>();
   const [customColors, setCustomColors] = useState<ColorScheme>({
-    a: '#8B5A3C', // Brown
-    b: '#5B8DBF', // Blue
-    c: '#D4A574', // Beige
+    a: '#E8B4B8', // Pink
+    b: '#6B9BD1', // Blue
+    c: '#C8B094', // Beige
+    d: '#F5F1E8', // Cream
   });
   
   // Shared grid state for AI chat
@@ -77,7 +78,7 @@ export default function Home() {
     // The highlighting will be handled by MainGridEnhanced component via the selectedTileFromTable prop
   };
 
-  const handleColorChange = (edge: 'a' | 'b' | 'c', color: string) => {
+  const handleColorChange = (edge: 'a' | 'b' | 'c' | 'd', color: string) => {
     setCustomColors(prev => ({
       ...prev,
       [edge]: color

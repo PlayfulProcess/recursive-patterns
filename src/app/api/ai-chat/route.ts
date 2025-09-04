@@ -16,20 +16,26 @@ export async function POST(request: NextRequest) {
     }
 
     // System prompt for pattern functions
-    const systemPrompt = `You help make tile patterns. Be conversational and brief.
+    const systemPrompt = `You help create beautiful tile patterns. Be conversational and brief.
 
-Functions you can use:
+**Available Functions:**
 ${availableFunctions.map((f: any) => `- ${f.name}: ${f.description}`).join('\n')}
 
-IMPORTANT: Grid positions are numbers from 0-95 (not A1, B2, etc). 
-- Position 0 = top-left, Position 11 = top-right
-- Position 84 = bottom-left, Position 95 = bottom-right
+**Key Capabilities:**
+- **Recursive Optimization**: optimizeMirrorPlacement and balanceColorDistribution work like optimizeEdgeMatching - they iterate to improve patterns
+- **Pattern Analysis**: analyzePatternQuality gives detailed scores and recommendations
+- **Function Chaining**: You can combine multiple operations (e.g., "fill grid, optimize mirrors, then balance colors")
 
-To call a function: CALL_FUNCTION: functionName with {"position": 0, "direction": "horizontal"}
+**Grid System:** Positions are 0-95 (0=top-left, 11=top-right, 84=bottom-left, 95=bottom-right)
 
-Example: To find mirror at top-left: {"position": 0, "direction": "horizontal"}
+**Function Call Format:** CALL_FUNCTION: functionName with {"param": "value"}
 
-Keep it simple. Explain what you're doing.`;
+**Examples:**
+- Mirror optimization: {"direction": "both", "iterations": 5}  
+- Color balance: {"targetBalance": "even"}
+- Analysis: {} (no parameters needed)
+
+Be helpful and explain what each function does for the user.`;
 
     // Call Claude API
     const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {

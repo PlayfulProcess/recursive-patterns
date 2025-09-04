@@ -6,18 +6,20 @@ export interface ColorScheme {
   a: string;
   b: string;
   c: string;
+  d: string;
 }
 
 interface ColorPaletteProps {
   selectedColors: ColorScheme;
-  onColorChange: (edge: 'a' | 'b' | 'c', color: string) => void;
+  onColorChange: (edge: 'a' | 'b' | 'c' | 'd', color: string) => void;
 }
 
 const ColorPalette: React.FC<ColorPaletteProps> = ({ selectedColors, onColorChange }) => {
   const predefinedColors = [
-    '#8B5A3C', // Original Brown
-    '#5B8DBF', // Original Blue  
-    '#D4A574', // Original Beige
+    '#E8B4B8', // Color 1 (Pink)
+    '#6B9BD1', // Color 2 (Blue)
+    '#C8B094', // Color 3 (Beige)
+    '#F5F1E8', // Color 4 (Cream)
     '#E74C3C', // Red
     '#2ECC71', // Green
     '#9B59B6', // Purple
@@ -26,14 +28,13 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({ selectedColors, onColorChan
     '#1ABC9C', // Turquoise
     '#F1C40F', // Yellow
     '#95A5A6', // Light Gray
-    '#E67E22', // Dark Orange
   ];
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 mb-8">
       <h3 className="text-white text-lg font-bold mb-4">Color Customization</h3>
-      <div className="grid grid-cols-3 gap-6">
-        {(['a', 'b', 'c'] as const).map((edge) => (
+      <div className="grid grid-cols-4 gap-6">
+        {(['a', 'b', 'c', 'd'] as const).map((edge) => (
           <div key={edge} className="text-center">
             <h4 className="text-gray-300 text-sm font-medium mb-3">
               Edge {edge.toUpperCase()}
@@ -70,9 +71,10 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({ selectedColors, onColorChan
       <div className="mt-6 text-center">
         <button
           onClick={() => {
-            onColorChange('a', '#8B5A3C');
-            onColorChange('b', '#5B8DBF');
-            onColorChange('c', '#D4A574');
+            onColorChange('a', '#E8B4B8');
+            onColorChange('b', '#6B9BD1');
+            onColorChange('c', '#C8B094');
+            onColorChange('d', '#F5F1E8');
           }}
           className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors"
         >

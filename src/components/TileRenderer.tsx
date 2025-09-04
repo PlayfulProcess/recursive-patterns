@@ -31,15 +31,17 @@ const TileRenderer: React.FC<TileProps> = ({
         case 'a': return customColors.a;
         case 'b': return customColors.b;
         case 'c': return customColors.c;
+        case 'd': return customColors.d;
         default: return '#666';
       }
     }
     
-    // Default colors
+    // Default colors (matching reference project)
     switch (edge) {
-      case 'a': return '#8B5A3C'; // Brown
-      case 'b': return '#5B8DBF'; // Blue
-      case 'c': return '#D4A574'; // Beige
+      case 'a': return '#E8B4B8'; // Pink
+      case 'b': return '#6B9BD1'; // Blue
+      case 'c': return '#C8B094'; // Beige
+      case 'd': return '#F5F1E8'; // Cream
       default: return '#666';
     }
   };

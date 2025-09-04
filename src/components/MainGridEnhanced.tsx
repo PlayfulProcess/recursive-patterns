@@ -12,7 +12,10 @@ import {
   findMirrorTile,
   findRotationFamily,
   findEdgeMatches,
-  TileRelationships 
+  TileRelationships,
+  calculatePatternScore,
+  findAllMirrorPairs,
+  iterativeImprove
 } from './CoreFunctions';
 
 interface MainGridEnhancedProps {
@@ -327,6 +330,82 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
     // Run the optimize edge matching function
     const newGrid = optimizeEdgeMatching(grid);
     setGrid(newGrid);
+  };
+
+  const runOptimizeMirrorPlacement = () => {
+    if (!tileRelationships) {
+      setTestMessage('❌ Tile relationships not loaded yet');
+      return;
+    }
+
+    setTestMessage('🪞 Optimizing mirror placement...');
+    
+    // Score function that prioritizes mirror proximity and correct orientation
+    const scoreFn = (grid: GridCell[]) => {
+      const score = calculatePatternScore(grid, tileRelationships);
+      return score.mirrorScore; // Uses enhanced scoring with orientation bonuses
+    };
+    
+    const optimizedGrid = iterativeImprove(grid, scoreFn, 5);
+    const mirrorPairs = findAllMirrorPairs(optimizedGrid, tileRelationships);
+    
+    // Count correctly oriented pairs
+    const horizontalPairs = mirrorPairs.filter(p => p.direction === 'horizontal').length;
+    const verticalPairs = mirrorPairs.filter(p => p.direction === 'vertical').length;
+    
+    setGrid(optimizedGrid);
+    setTestMessage(`🪞 Optimized mirror placement! Found ${mirrorPairs.length} mirror pairs: ${horizontalPairs} horizontal, ${verticalPairs} vertical. Horizontal mirrors placed horizontally, vertical mirrors placed vertically.`);
+    
+    // Clear message after 7 seconds (longer message)
+    setTimeout(() => setTestMessage(''), 7000);
+  };
+
+  const runBalanceColorDistribution = () => {
+    if (!tileRelationships) {
+      setTestMessage('❌ Tile relationships not loaded yet');
+      return;
+    }
+
+    setTestMessage('🎨 Balancing color distribution...');
+    
+    // Score function that prioritizes color balance
+    const scoreFn = (grid: GridCell[]) => {
+      const score = calculatePatternScore(grid, tileRelationships);
+      return score.colorBalance;
+    };
+    
+    const optimizedGrid = iterativeImprove(grid, scoreFn, 8);
+    const finalScore = calculatePatternScore(optimizedGrid, tileRelationships);
+    
+    setGrid(optimizedGrid);
+    setTestMessage(`🎨 Balanced color distribution! Color balance score: ${(finalScore.colorBalance * 100).toFixed(1)}%`);
+    
+    // Clear message after 5 seconds
+    setTimeout(() => setTestMessage(''), 5000);
+  };
+
+  const runAnalyzePatternQuality = () => {
+    if (!tileRelationships) {
+      setTestMessage('❌ Tile relationships not loaded yet');
+      return;
+    }
+
+    const score = calculatePatternScore(grid, tileRelationships);
+    const mirrorPairs = findAllMirrorPairs(grid, tileRelationships);
+    
+    const analysis = `📊 Pattern Analysis:
+• Edge Matching: ${(score.edgeScore * 100).toFixed(1)}%
+• Mirror Proximity: ${score.mirrorScore} points (${mirrorPairs.length} pairs)
+• Color Balance: ${(score.colorBalance * 100).toFixed(1)}%
+• Flow Continuity: ${score.flowScore} connections
+• Overall Score: ${(score.totalScore * 100).toFixed(1)}%
+
+${score.totalScore > 0.7 ? '✅ Pattern looks great!' : '🔧 Pattern could be improved'}`;
+
+    setTestMessage(analysis);
+    
+    // Clear message after 10 seconds (longer for analysis)
+    setTimeout(() => setTestMessage(''), 10000);
   };
 
   // Test recursive functions - require a selected cell
@@ -682,6 +761,33 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
           >
             <span>🎨</span>
             Optimize Edge Matching
+          </button>
+          <button 
+            onClick={runOptimizeMirrorPlacement}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-700 text-white rounded-lg
+                     hover:bg-emerald-600 transition-all duration-200 font-semibold
+                     hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <span>🪞</span>
+            Optimize Mirrors
+          </button>
+          <button 
+            onClick={runBalanceColorDistribution}
+            className="flex items-center gap-2 px-4 py-2 bg-amber-700 text-white rounded-lg
+                     hover:bg-amber-600 transition-all duration-200 font-semibold
+                     hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <span>🎨</span>
+            Balance Colors
+          </button>
+          <button 
+            onClick={runAnalyzePatternQuality}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-700 text-white rounded-lg
+                     hover:bg-indigo-600 transition-all duration-200 font-semibold
+                     hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <span>📊</span>
+            Analyze Pattern
           </button>
         </div>
 
