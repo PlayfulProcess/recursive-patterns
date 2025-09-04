@@ -325,10 +325,11 @@ export function buildTileRelationships(allTiles: TileData[]): TileRelationships 
     tileById.set(tile.id, tile);
 
     // Group tiles by shape family (same base pattern)
-    if (!shapeGroups.has(tile.shape || '')) {
-      shapeGroups.set(tile.shape || '', []);
+    const shapeKey = tile.shape.toString();
+    if (!shapeGroups.has(shapeKey)) {
+      shapeGroups.set(shapeKey, []);
     }
-    shapeGroups.get(tile.shape || '')?.push(tile);
+    shapeGroups.get(shapeKey)?.push(tile);
 
     // Index tiles by edge patterns for matching
     const edges = [tile.edge1, tile.edge2, tile.edge3, tile.edge4];
@@ -391,7 +392,8 @@ export function findRotationFamily(
   relationships: TileRelationships
 ): TileData[] {
   
-  const shapeFamily = relationships.shapeGroups.get(currentTile.shape || '');
+  const shapeKey = currentTile.shape.toString();
+  const shapeFamily = relationships.shapeGroups.get(shapeKey);
   if (!shapeFamily) {
     console.log(`⚠️ No shape family found for: ${currentTile.shape}`);
     return [];

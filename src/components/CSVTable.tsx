@@ -4,14 +4,13 @@ import React from 'react';
 
 export interface TileData {
   id: string;
-  edge1: string;
-  edge2: string;
-  edge3: string;
-  edge4: string;
-  rotation: string;
-  shape: string;
-  mirrorH: string;
-  mirrorV: string;
+  edge1: string; // South edge
+  edge2: string; // West edge
+  edge3: string; // North edge
+  edge4: string; // East edge
+  shape: number; // Shape family (0,1,2,3)
+  mirrorH: string; // Horizontal mirror ID
+  mirrorV: string; // Vertical mirror ID
 }
 
 interface CSVTableProps {
@@ -33,8 +32,9 @@ const CSVTable: React.FC<CSVTableProps> = ({ data, onRowClick, selectedTile }) =
               <th className="border border-gray-600 px-2 py-1 text-left text-white">Edge-W</th>
               <th className="border border-gray-600 px-2 py-1 text-left text-white">Edge-N</th>
               <th className="border border-gray-600 px-2 py-1 text-left text-white">Edge-E</th>
-              <th className="border border-gray-600 px-2 py-1 text-left text-white">Rotation</th>
               <th className="border border-gray-600 px-2 py-1 text-left text-white">Shape</th>
+              <th className="border border-gray-600 px-2 py-1 text-left text-white">Mirror-H</th>
+              <th className="border border-gray-600 px-2 py-1 text-left text-white">Mirror-V</th>
             </tr>
           </thead>
           <tbody>
@@ -51,8 +51,9 @@ const CSVTable: React.FC<CSVTableProps> = ({ data, onRowClick, selectedTile }) =
                 <td className="border border-gray-600 px-2 py-1 text-center text-white">{tile.edge2}</td>
                 <td className="border border-gray-600 px-2 py-1 text-center text-white">{tile.edge3}</td>
                 <td className="border border-gray-600 px-2 py-1 text-center text-white">{tile.edge4}</td>
-                <td className="border border-gray-600 px-2 py-1 text-center text-white">{tile.rotation}</td>
                 <td className="border border-gray-600 px-2 py-1 text-center text-white">{tile.shape}</td>
+                <td className="border border-gray-600 px-2 py-1 text-center text-white font-mono text-xs">{tile.mirrorH}</td>
+                <td className="border border-gray-600 px-2 py-1 text-center text-white font-mono text-xs">{tile.mirrorV}</td>
               </tr>
             ))}
           </tbody>

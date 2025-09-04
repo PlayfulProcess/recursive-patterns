@@ -8,7 +8,6 @@ interface TileProps {
   tile: TileData;
   size?: number;
   customColors?: ColorScheme;
-  rotation?: number; // Override rotation in degrees
   seamless?: boolean; // Hide labels and borders for grid display
 }
 
@@ -16,7 +15,6 @@ const TileRenderer: React.FC<TileProps> = ({
   tile,
   size = 100,
   customColors,
-  rotation: customRotation,
   seamless = false
 }) => {
   // Handle case where tile is undefined
@@ -24,7 +22,7 @@ const TileRenderer: React.FC<TileProps> = ({
     return <div className="w-full h-full bg-red-500 flex items-center justify-center text-white text-xs">No Tile</div>;
   }
 
-  const { id, edge1, edge2, edge3, edge4, rotation: tileRotation } = tile;
+  const { id, edge1, edge2, edge3, edge4, shape } = tile;
   const getColor = (edge: string) => {
     if (customColors) {
       switch (edge) {
@@ -46,19 +44,9 @@ const TileRenderer: React.FC<TileProps> = ({
     }
   };
 
-  const getRotationAngle = (rotation: string) => {
-    switch (rotation) {
-      case 'N': return 0;
-      case 'E': return 90;
-      case 'S': return 180;
-      case 'W': return 270;
-      default: return 0;
-    }
-  };
-
-  // Map edges to proper positions: S=Top, W=Left, N=Bottom, E=Right
-  const edges = [edge1, edge4, edge3, edge2]; // [S, E, N, W] -> [Top, Right, Bottom, Left]
-  const rotationAngle = customRotation !== undefined ? customRotation : getRotationAngle(tileRotation);
+  // Direct edge mapping - no rotation needed
+  // edge1=South(Top), edge2=West(Left), edge3=North(Bottom), edge4=East(Right)  
+  const edges = [edge1, edge4, edge3, edge2]; // [Top, Right, Bottom, Left] for SVG rendering
 
   if (seamless) {
     // Seamless mode for grid display - no borders, labels, or containers
@@ -68,7 +56,6 @@ const TileRenderer: React.FC<TileProps> = ({
         height="100%" 
         viewBox="0 0 100 100" 
         className="block"
-        style={{ transform: `rotate(${rotationAngle}deg)` }}
       >
         {/* Top triangle (South edge) */}
         <polygon 
@@ -101,8 +88,7 @@ const TileRenderer: React.FC<TileProps> = ({
         className="relative border border-gray-300"
         style={{ 
           width: size, 
-          height: size,
-          transform: `rotate(${rotationAngle}deg)`
+          height: size
         }}
       >
         <svg width={size} height={size} viewBox="0 0 100 100">
@@ -130,7 +116,7 @@ const TileRenderer: React.FC<TileProps> = ({
       </div>
       <div className="text-xs text-center">
         <div className="font-mono text-white">{id}</div>
-        <div className="text-gray-400">{edges.join('-')} {tileRotation}</div>
+        <div className="text-gray-400">{edges.join('-')} Shape:{shape}</div>
       </div>
     </div>
   );

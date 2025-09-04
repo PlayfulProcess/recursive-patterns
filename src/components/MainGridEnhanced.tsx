@@ -384,6 +384,29 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
     setTimeout(() => setTestMessage(''), 5000);
   };
 
+  const runFillGridByShapes = async () => {
+    if (!aiPatternFunctions) {
+      setTestMessage('❌ AI Pattern Functions not loaded yet');
+      return;
+    }
+
+    setTestMessage('🔷 Filling grid with shape distribution...');
+    
+    try {
+      const result = await aiPatternFunctions.fillGridByShapes({
+        shapes: [0, 1, 2, 3],
+        distribution: 'even'
+      });
+      
+      setTestMessage(result.success ? `✅ ${result.message}` : `❌ ${result.message}`);
+    } catch (error) {
+      setTestMessage(`❌ Error: ${error}`);
+    }
+    
+    // Clear message after 5 seconds
+    setTimeout(() => setTestMessage(''), 5000);
+  };
+
   const runAnalyzePatternQuality = () => {
     if (!tileRelationships) {
       setTestMessage('❌ Tile relationships not loaded yet');
@@ -492,6 +515,28 @@ ${score.totalScore > 0.7 ? '✅ Pattern looks great!' : '🔧 Pattern could be i
     } else {
       clearHighlights();
       setTestMessage(`❌ No rotation variants found for ${selectedCell.tile.id}`);
+    }
+  };
+
+  const selectSameShape = () => {
+    if (!selectedCell?.tile) {
+      setTestMessage('❌ Please select exactly one cell with a tile first');
+      return;
+    }
+
+    // Find all tiles with the same shape
+    const shapeFamily = allTiles.filter(tile => tile.shape === selectedCell.tile.shape);
+    if (shapeFamily.length > 0) {
+      // Highlight all tiles with same shape in the grid
+      const shapeIds = shapeFamily.map(t => t.id);
+      const shapePositions = findTilePositions(shapeIds);
+      setHighlightedTiles(new Set(shapePositions));
+      setHighlightType('shape');
+      
+      setTestMessage(`🔷 Found ${shapeFamily.length} tiles with shape ${selectedCell.tile.shape} (highlighted in purple): ${shapeFamily.map(t => t.id).join(', ')}`);
+    } else {
+      clearHighlights();
+      setTestMessage(`❌ No tiles found with shape ${selectedCell.tile.shape}`);
     }
   };
 
@@ -789,6 +834,15 @@ ${score.totalScore > 0.7 ? '✅ Pattern looks great!' : '🔧 Pattern could be i
             <span>📊</span>
             Analyze Pattern
           </button>
+          <button 
+            onClick={runFillGridByShapes}
+            className="flex items-center gap-2 px-4 py-2 bg-teal-700 text-white rounded-lg
+                     hover:bg-teal-600 transition-all duration-200 font-semibold
+                     hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <span>🔷</span>
+            Fill by Shapes
+          </button>
         </div>
 
         {/* Recursive Function Buttons - Require Selected Cell */}
@@ -823,6 +877,15 @@ ${score.totalScore > 0.7 ? '✅ Pattern looks great!' : '🔧 Pattern could be i
             >
               <span>🔄</span>
               Rotations
+            </button>
+            <button 
+              onClick={selectSameShape}
+              className="flex items-center gap-2 px-3 py-2 bg-purple-700 text-white rounded
+                       hover:bg-purple-600 transition-all duration-200 text-sm
+                       hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <span>🔷</span>
+              Same Shape
             </button>
             <button 
               onClick={() => testFindEdgeMatches('north')}

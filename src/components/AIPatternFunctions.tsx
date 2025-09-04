@@ -287,6 +287,64 @@ ${score.edgeScore < 0.5 ? '- Run edge matching optimization\n' : ''}${score.mirr
     }
   }
 
+  // AI FUNCTION 9: Fill Grid by Shape Distribution
+  public async fillGridByShapes(args: { 
+    shapes?: number[]; // Shape families to use [0,1,2,3]
+    distribution?: 'even' | 'clustered' | 'random' 
+  } = {}): Promise<FunctionResult> {
+    try {
+      const { shapes = [0, 1, 2, 3], distribution = 'even' } = args;
+      
+      // Filter tiles by desired shapes
+      const filteredTiles = this.allTiles.filter(tile => shapes.includes(tile.shape));
+      if (filteredTiles.length === 0) {
+        return { success: false, message: `No tiles found for shapes: ${shapes.join(', ')}` };
+      }
+
+      const newGrid = [...this.grid];
+      const availablePositions = newGrid.map((_, i) => i).filter(i => !newGrid[i].tile);
+      
+      // Distribute tiles based on strategy
+      let tilesToPlace: TileData[] = [];
+      if (distribution === 'even') {
+        // Even distribution across shapes
+        const tilesPerShape = Math.floor(availablePositions.length / shapes.length);
+        shapes.forEach(shapeId => {
+          const shapeTiles = filteredTiles.filter(t => t.shape === shapeId);
+          tilesToPlace.push(...shapeTiles.slice(0, tilesPerShape));
+        });
+      } else if (distribution === 'clustered') {
+        // Use mainly one shape family
+        const primaryShape = shapes[0];
+        const primaryTiles = filteredTiles.filter(t => t.shape === primaryShape);
+        tilesToPlace = primaryTiles.slice(0, Math.min(availablePositions.length, primaryTiles.length));
+      } else {
+        // Random selection
+        tilesToPlace = [...filteredTiles].sort(() => Math.random() - 0.5).slice(0, availablePositions.length);
+      }
+
+      // Place tiles
+      for (let i = 0; i < Math.min(tilesToPlace.length, availablePositions.length); i++) {
+        const pos = availablePositions[i];
+        newGrid[pos] = { ...newGrid[pos], tile: tilesToPlace[i], rotation: 0 };
+      }
+
+      this.grid = newGrid;
+      this.onGridUpdate(newGrid);
+      
+      return {
+        success: true,
+        message: `Filled ${tilesToPlace.length} positions with shapes ${shapes.join(', ')} using ${distribution} distribution`,
+        gridState: newGrid
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Error filling grid by shapes: ${error}`
+      };
+    }
+  }
+
   // Execute function by name (for AI calls)
   public async executeFunction(functionName: string, args: any = {}): Promise<FunctionResult> {
     console.log(`🤖 AI calling function: ${functionName}`);
@@ -308,10 +366,12 @@ ${score.edgeScore < 0.5 ? '- Run edge matching optimization\n' : ''}${score.mirr
         return this.balanceColorDistribution(args);
       case 'analyzePatternQuality':
         return this.analyzePatternQuality();
+      case 'fillGridByShapes':
+        return this.fillGridByShapes(args);
       default:
         return {
           success: false,
-          message: `Unknown function: ${functionName}. Available: fillGrid, optimizeEdgeMatching, findMirrorTile, findRotationFamily, findEdgeMatches, optimizeMirrorPlacement, balanceColorDistribution, analyzePatternQuality`
+          message: `Unknown function: ${functionName}. Available: fillGrid, optimizeEdgeMatching, findMirrorTile, findRotationFamily, findEdgeMatches, optimizeMirrorPlacement, balanceColorDistribution, analyzePatternQuality, fillGridByShapes`
         };
     }
   }
@@ -364,6 +424,10 @@ ${score.edgeScore < 0.5 ? '- Run edge matching optimization\n' : ''}${score.mirr
       {
         name: 'findEdgeMatches',
         description: 'Find tiles with matching edge colors for seamless connections'
+      },
+      {
+        name: 'fillGridByShapes',
+        description: 'Fill grid using specific shape families with distribution strategy (shapes: number[], distribution: even/clustered/random)'
       }
     ];
   }

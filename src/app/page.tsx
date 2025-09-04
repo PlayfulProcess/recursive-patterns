@@ -40,7 +40,7 @@ export default function Home() {
     const loadTiles = async () => {
       try {
         // Try direct CSV file first, then API fallback
-        let response = await fetch('/patterns2.csv');
+        let response = await fetch('/patterns3.csv');
         if (!response.ok) {
           response = await fetch('/api/patterns');
         }
@@ -56,10 +56,9 @@ export default function Home() {
             edge2: values[2]?.trim(), // edge-W (West/Left) 
             edge3: values[3]?.trim(), // edge-N (North/Bottom)
             edge4: values[4]?.trim(), // edge-E (East/Right)
-            rotation: values[5]?.trim(),
-            shape: values[6]?.trim(),
-            mirrorH: values[7]?.trim(),
-            mirrorV: values[8]?.trim()
+            shape: parseInt(values[5]?.trim()) || 0, // Now numeric shape
+            mirrorH: values[6]?.trim(),
+            mirrorV: values[7]?.trim()
           };
         });
         
