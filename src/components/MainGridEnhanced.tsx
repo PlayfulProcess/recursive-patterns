@@ -20,14 +20,7 @@ import {
   exportGridToCSV,
   importGridFromCSV,
   downloadCSV,
-  validateCSVFile,
-  analyzePatternFromCSV,
-  calculateEdgeMatchScoreFromCSV,
-  findOptimizationTargetsFromCSV,
-  compareGridStates,
-  buildPatternLibrary,
-  getImprovementSuggestions,
-  analyzeMirrorPairsFromCSV
+  validateCSVFile
 } from '../lib/coreFunctions';
 import { maximizeEdgeMatching, calculateTotalScore } from '@/lib/maxEdgeMatching';
 
@@ -80,8 +73,6 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
   const [optimizationProgress, setOptimizationProgress] = useState<string>('');
   const gridRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [lastExportedCSV, setLastExportedCSV] = useState<any[]>([]);
-  const [previousCSV, setPreviousCSV] = useState<any[]>([]);
   const [patternAnalysis, setPatternAnalysis] = useState<string>('');
 
   // Sync external grid changes to internal state
@@ -718,9 +709,6 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
       
       downloadCSV(result.csvData, filename);
       
-      // Save the exported CSV data for analysis
-      const csvData = getCurrentGridAsCSVData();
-      setLastExportedCSV(csvData);
       
       setTestMessage(`✅ Grid exported successfully! ${result.message}`);
       
@@ -781,111 +769,6 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
     }
   };
 
-  // CSV Analysis Functions
-  const runAnalyzePatternFromCSV = () => {
-    const csvData = getCurrentGridAsCSVData();
-    const analysis = analyzePatternFromCSV(csvData);
-    
-    const message = `📊 Pattern Analysis:
-• Overall Score: ${analysis.overallScore}/${analysis.maxPossibleScore} (${(analysis.efficiency * 100).toFixed(1)}%)
-• Perfect Matches (4): ${analysis.edgeMatchDistribution.perfect} cells
-• Good Matches (3): ${analysis.edgeMatchDistribution.good} cells
-• Fair Matches (2): ${analysis.edgeMatchDistribution.fair} cells
-• Poor Matches (1): ${analysis.edgeMatchDistribution.poor} cells
-• Isolated (0): ${analysis.edgeMatchDistribution.isolated} cells
-• Critical Cells: ${analysis.criticalCells.length} need attention
-• Recommendations: ${analysis.recommendations.join('; ')}`;
-    
-    setTestMessage(message);
-    setTimeout(() => setTestMessage(''), 12000);
-  };
-
-  const runCalculateEdgeMatchScoreFromCSV = () => {
-    const csvData = getCurrentGridAsCSVData();
-    const score = calculateEdgeMatchScoreFromCSV(csvData);
-    
-    setTestMessage(`🎯 Edge Matching Score: ${(score * 100).toFixed(1)}% efficiency`);
-    setTimeout(() => setTestMessage(''), 5000);
-  };
-
-  const runFindOptimizationTargetsFromCSV = () => {
-    const csvData = getCurrentGridAsCSVData();
-    const targets = findOptimizationTargetsFromCSV(csvData);
-    
-    if (targets.length === 0) {
-      setTestMessage(`✅ No optimization targets found - grid is well optimized!`);
-    } else {
-      // Highlight the optimization targets
-      const targetPositions = targets.map(t => `${t.col - 1}-${t.row - 1}`);
-      setHighlightedTiles(new Set(targetPositions));
-      setHighlightType('optimization-target');
-      
-      const topTargets = targets.slice(0, 5);
-      const targetList = topTargets.map(t => `(${t.col},${t.row}): score=${t.neighborScore}`).join(', ');
-      setTestMessage(`🎯 Found ${targets.length} optimization targets (highlighted in purple): ${targetList}${targets.length > 5 ? '...' : ''}`);
-    }
-    setTimeout(() => setTestMessage(''), 8000);
-  };
-
-  const runCompareGridStates = () => {
-    if (lastExportedCSV.length === 0) {
-      setTestMessage(`❌ No exported CSV to compare with. Export first, then make changes and run this again.`);
-      setTimeout(() => setTestMessage(''), 5000);
-      return;
-    }
-    
-    const currentCSV = getCurrentGridAsCSVData();
-    const comparison = compareGridStates(lastExportedCSV, currentCSV);
-    
-    const message = `📊 Grid Comparison (Last Export vs Current):
-• Score Change: ${comparison.scoreImprovement >= 0 ? '+' : ''}${comparison.scoreImprovement} matches
-• Efficiency Change: ${(comparison.efficiencyChange * 100).toFixed(1)}%
-• Improved Cells: ${comparison.matchingImprovements}
-• Degraded Cells: ${comparison.degradedCells}`;
-    
-    setTestMessage(message);
-    setTimeout(() => setTestMessage(''), 8000);
-  };
-
-  const runGetImprovementSuggestions = () => {
-    const csvData = getCurrentGridAsCSVData();
-    const suggestions = getImprovementSuggestions(csvData);
-    
-    if (suggestions.length === 0) {
-      setTestMessage(`✅ Grid is well optimized - no immediate improvements needed!`);
-    } else {
-      // Highlight cells that need improvement
-      const suggestionPositions = suggestions.map(s => {
-        const [row, col] = s.position.split(',').map(Number);
-        return `${col - 1}-${row - 1}`;
-      });
-      setHighlightedTiles(new Set(suggestionPositions));
-      setHighlightType('needs-improvement');
-      
-      const topSuggestions = suggestions.slice(0, 3);
-      const suggestionList = topSuggestions.map(s => 
-        `Position ${s.position}: ${s.issues.join(', ')} (potential: +${s.potential})`
-      ).join('\n• ');
-      
-      setTestMessage(`💡 Improvement Suggestions (${suggestions.length} total):\n• ${suggestionList}`);
-    }
-    setTimeout(() => setTestMessage(''), 10000);
-  };
-
-  const runAnalyzeMirrorPairsFromCSV = () => {
-    const csvData = getCurrentGridAsCSVData();
-    const mirrorAnalysis = analyzeMirrorPairsFromCSV(csvData);
-    
-    const message = `🪞 Mirror Analysis:
-• Horizontal Adjacencies: ${mirrorAnalysis.horizontalPairs}
-• Vertical Adjacencies: ${mirrorAnalysis.verticalPairs}
-• Total Rendered: ${mirrorAnalysis.totalRenderedPairs}
-• Max Possible: ${mirrorAnalysis.potentialPairs} (96 tiles × 2 mirrors each)
-• Mirror Placement: ${mirrorAnalysis.mirrorPlacementPercentage.toFixed(1)}%`;
-    
-    setTestMessage(message);
-    setTimeout(() => setTestMessage(''), 8000);
-  };
 
   const testFindEdgeMatches = (direction: 'north' | 'south' | 'east' | 'west') => {
     console.log('🔗 testFindEdgeMatches called with direction:', direction);
@@ -1217,74 +1100,6 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
           </button>
         </div>
 
-        {/* CSV Analysis Functions - ULTRA-FAST */}
-        <div className="mb-4">
-          <div className="text-sm text-gray-400 mb-2">
-            CSV Analysis Functions (Ultra-Fast - 10x faster than grid analysis):
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button 
-              onClick={runAnalyzePatternFromCSV}
-              className="flex items-center gap-2 px-3 py-2 bg-purple-700 text-white rounded
-                       hover:bg-purple-600 transition-all duration-200 text-sm font-semibold
-                       hover:scale-[1.02] active:scale-[0.98]"
-              title="Comprehensive pattern analysis from current grid"
-            >
-              <span>📊</span>
-              Analyze Pattern
-            </button>
-            <button 
-              onClick={runCalculateEdgeMatchScoreFromCSV}
-              className="flex items-center gap-2 px-3 py-2 bg-indigo-700 text-white rounded
-                       hover:bg-indigo-600 transition-all duration-200 text-sm font-semibold
-                       hover:scale-[1.02] active:scale-[0.98]"
-              title="Calculate edge matching efficiency score"
-            >
-              <span>🎯</span>
-              Edge Score
-            </button>
-            <button 
-              onClick={runFindOptimizationTargetsFromCSV}
-              className="flex items-center gap-2 px-3 py-2 bg-red-700 text-white rounded
-                       hover:bg-red-600 transition-all duration-200 text-sm font-semibold
-                       hover:scale-[1.02] active:scale-[0.98]"
-              title="Find and highlight low-scoring positions"
-            >
-              <span>🎯</span>
-              Find Targets
-            </button>
-            <button 
-              onClick={runCompareGridStates}
-              className="flex items-center gap-2 px-3 py-2 bg-cyan-700 text-white rounded
-                       hover:bg-cyan-600 transition-all duration-200 text-sm font-semibold
-                       hover:scale-[1.02] active:scale-[0.98]"
-              title="Compare current grid with last export"
-            >
-              <span>📊</span>
-              Compare States
-            </button>
-            <button 
-              onClick={runGetImprovementSuggestions}
-              className="flex items-center gap-2 px-3 py-2 bg-yellow-700 text-white rounded
-                       hover:bg-yellow-600 transition-all duration-200 text-sm font-semibold
-                       hover:scale-[1.02] active:scale-[0.98]"
-              title="Get AI-powered improvement suggestions"
-            >
-              <span>💡</span>
-              Get Suggestions
-            </button>
-            <button 
-              onClick={runAnalyzeMirrorPairsFromCSV}
-              className="flex items-center gap-2 px-3 py-2 bg-emerald-700 text-white rounded
-                       hover:bg-emerald-600 transition-all duration-200 text-sm font-semibold
-                       hover:scale-[1.02] active:scale-[0.98]"
-              title="Analyze mirror tile relationships"
-            >
-              <span>🪞</span>
-              Mirror Analysis
-            </button>
-          </div>
-        </div>
 
         {/* Recursive Function Buttons - Require Selected Cell */}
         <div className="mb-4">
