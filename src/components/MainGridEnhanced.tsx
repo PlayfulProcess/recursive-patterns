@@ -15,8 +15,9 @@ import {
   TileRelationships,
   calculatePatternScore,
   findAllMirrorPairs,
-  iterativeImprove
-} from './CoreFunctions';
+  iterativeImprove,
+  GridCell
+} from '../lib/coreFunctions';
 import { maximizeEdgeMatching, calculateTotalScore } from '@/lib/maxEdgeMatching';
 
 interface MainGridEnhancedProps {
@@ -25,13 +26,6 @@ interface MainGridEnhancedProps {
   grid?: GridCell[];
   onGridUpdate?: (newGrid: GridCell[]) => void;
   selectedTileFromTable?: TileData;
-}
-
-interface GridCell {
-  x: number;
-  y: number;
-  tile?: TileData;
-  rotation?: number;
 }
 
 export default function MainGridEnhanced({ allTiles, customColors, grid: externalGrid, onGridUpdate, selectedTileFromTable }: MainGridEnhancedProps) {

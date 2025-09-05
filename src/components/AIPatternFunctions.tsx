@@ -16,7 +16,7 @@ import {
   calculatePatternScore,
   findAllMirrorPairs,
   iterativeImprove
-} from './CoreFunctions';
+} from '../lib/coreFunctions';
 
 export interface FunctionResult {
   success: boolean;
