@@ -17,6 +17,7 @@ import {
   findAllMirrorPairs,
   iterativeImprove
 } from './CoreFunctions';
+import { maximizeEdgeMatching, calculateTotalScore } from '@/lib/maxEdgeMatching';
 
 interface MainGridEnhancedProps {
   allTiles: TileData[];
@@ -70,6 +71,8 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
   const [highlightedTiles, setHighlightedTiles] = useState<Set<string>>(new Set());
   const [highlightType, setHighlightType] = useState<string>('');
   const [showTileIDs, setShowTileIDs] = useState<boolean>(false);
+  const [isOptimizing, setIsOptimizing] = useState<boolean>(false);
+  const [optimizationProgress, setOptimizationProgress] = useState<string>('');
   const gridRef = useRef<HTMLDivElement>(null);
 
   // Sync external grid changes to internal state
@@ -324,6 +327,101 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
     
     // Clear duplicates since we're placing each tile only once
     setDuplicates(new Set());
+  };
+
+  // Rerender all tiles from scratch with 1-to-1 CSV mapping (no duplicates)
+  const rerenderAllTiles = () => {
+    if (allTiles.length === 0) {
+      setTestMessage('❌ No tiles available to render');
+      return;
+    }
+    
+    console.log('🔄 Re-rendering all tiles from CSV (1-to-1 mapping)...');
+    
+    // Create new empty grid
+    const newGrid: GridCell[] = [];
+    for (let y = 0; y < 8; y++) {
+      for (let x = 0; x < 12; x++) {
+        newGrid.push({ x, y });
+      }
+    }
+    
+    // Shuffle all available tiles for random placement
+    const shuffledTiles = [...allTiles].sort(() => Math.random() - 0.5);
+    
+    // Fill grid with exactly 96 unique tiles (1-to-1 mapping)
+    const tilesToPlace = Math.min(shuffledTiles.length, newGrid.length, 96);
+    for (let i = 0; i < tilesToPlace; i++) {
+      newGrid[i] = {
+        ...newGrid[i],
+        tile: shuffledTiles[i] // Each tile used exactly once
+      };
+    }
+    
+    setGrid(newGrid);
+    clearHighlights();
+    setDuplicates(new Set()); // Clear any duplicate tracking
+    
+    // Calculate and show the new score
+    const score = calculateTotalScore(newGrid, 12);
+    const maxPossible = 11 * 8 + 12 * 7; // horizontal + vertical edges
+    const percentage = ((score / maxPossible) * 100).toFixed(1);
+    
+    console.log(`✅ Re-rendered ${tilesToPlace} unique tiles (1-to-1 CSV mapping)`);
+    console.log(`📊 Random placement score: ${score}/${maxPossible} (${percentage}%)`);
+    setTestMessage(`🔄 Re-rendered all ${tilesToPlace} unique tiles from CSV! Score: ${score}/${maxPossible} (${percentage}%)`);
+  };
+
+  // Run the Maximum Edge Matching optimization algorithm
+  const runMaxEdgeMatching = async () => {
+    if (isOptimizing) return;
+    
+    setIsOptimizing(true);
+    setOptimizationProgress('Starting optimization...');
+    clearHighlights();
+    
+    // Check if grid has tiles
+    const hasTiles = grid.some(cell => cell.tile);
+    const initialGrid = hasTiles ? grid : undefined;
+    
+    if (!hasTiles) {
+      setOptimizationProgress('Initializing with random placement...');
+    }
+    
+    // Run optimization with progress updates
+    setTimeout(() => {
+      const result = maximizeEdgeMatching(
+        allTiles,
+        initialGrid,
+        12, // gridWidth
+        8,  // gridHeight
+        50, // maxIterations
+        (progress) => {
+          // Update progress message
+          if (progress.phase === 'complete') {
+            const maxPossible = 11 * 8 + 12 * 7; // horizontal + vertical edges
+            const percentage = ((progress.score / maxPossible) * 100).toFixed(1);
+            setOptimizationProgress(`✅ Complete! Score: ${progress.score}/${maxPossible} (${percentage}%)`);
+            setTestMessage(`🎯 Optimization complete! Final score: ${progress.score}/${maxPossible} (${percentage}%) in ${progress.iteration} iterations`);
+          } else {
+            setOptimizationProgress(`Iteration ${progress.iteration}: ${progress.phase === 'swap' ? 'swapping tiles' : progress.phase} - Score: ${progress.score}`);
+          }
+        }
+      );
+      
+      // Apply the optimized grid
+      setGrid(result.grid);
+      setIsOptimizing(false);
+      
+      // Show improvement summary
+      const improvement = result.score - result.improvements[0];
+      console.log(`📈 Total improvement: +${improvement} matches`);
+      
+      // Clear progress after a delay
+      setTimeout(() => {
+        setOptimizationProgress('');
+      }, 5000);
+    }, 100);
   };
 
   const runEdgeMatching = () => {
@@ -803,6 +901,28 @@ ${score.totalScore > 0.7 ? '✅ Pattern looks great!' : '🔧 Pattern could be i
             Fill All Tiles
           </button>
           <button 
+            onClick={rerenderAllTiles}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-lg
+                     hover:bg-blue-600 transition-all duration-200 font-semibold
+                     hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <span>🔄</span>
+            Rerender All Tiles
+          </button>
+          <button 
+            onClick={runMaxEdgeMatching}
+            disabled={isOptimizing}
+            className={`flex items-center gap-2 px-4 py-2 text-white rounded-lg
+                     transition-all duration-200 font-semibold
+                     hover:scale-[1.02] active:scale-[0.98]
+                     ${isOptimizing 
+                       ? 'bg-gray-600 cursor-not-allowed' 
+                       : 'bg-red-700 hover:bg-red-600'}`}
+          >
+            <span>{isOptimizing ? '⏳' : '🎯'}</span>
+            {isOptimizing ? 'Optimizing...' : 'Max Edge Matching'}
+          </button>
+          <button 
             onClick={runEdgeMatching}
             className="flex items-center gap-2 px-4 py-2 bg-purple-700 text-white rounded-lg
                      hover:bg-purple-600 transition-all duration-200 font-semibold
@@ -957,6 +1077,13 @@ ${score.totalScore > 0.7 ? '✅ Pattern looks great!' : '🔧 Pattern could be i
               );
             })()}
           </div>
+          
+          {/* Optimization Progress Display */}
+          {optimizationProgress && (
+            <div className="mt-3 p-3 bg-blue-800 rounded text-sm text-white animate-pulse">
+              {optimizationProgress}
+            </div>
+          )}
           
           {/* Test Message Display */}
           {testMessage && (
