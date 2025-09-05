@@ -17,6 +17,14 @@ export interface GridExportData {
   rotation: number;
   isHighlighted: boolean;
   highlightType: string;
+  shapeFamily: number;
+  northMatch: number;
+  eastMatch: number;
+  southMatch: number;
+  westMatch: number;
+  neighborScore: number;
+  mirrorH_position: string;
+  mirrorV_position: string;
 }
 
 export interface ExportResult {
@@ -35,7 +43,113 @@ export interface ImportResult {
 }
 
 /**
- * Export current grid state to CSV format with highlighting information
+ * Calculate mirror positions for a tile relative to its placement
+ */
+function calculateMirrorPositions(
+  cell: GridCell,
+  grid: GridCell[],
+  gridWidth: number,
+  gridHeight: number
+): { mirrorH_position: string; mirrorV_position: string } {
+  const x = cell.x;
+  const y = cell.y;
+  const tile = cell.tile!;
+  
+  let mirrorH_position = '';
+  let mirrorV_position = '';
+  
+  // Check all adjacent positions for mirrors
+  const positions = [
+    { dx: 0, dy: -1, direction: 'north' },  // North
+    { dx: 1, dy: 0, direction: 'east' },    // East
+    { dx: 0, dy: 1, direction: 'south' },   // South
+    { dx: -1, dy: 0, direction: 'west' }    // West
+  ];
+  
+  positions.forEach(({ dx, dy, direction }) => {
+    const checkX = x + dx;
+    const checkY = y + dy;
+    
+    // Check bounds
+    if (checkX >= 0 && checkX < gridWidth && checkY >= 0 && checkY < gridHeight) {
+      const checkIndex = checkY * gridWidth + checkX;
+      const neighborCell = grid[checkIndex];
+      
+      if (neighborCell?.tile) {
+        // Check if neighbor is horizontal mirror of current tile
+        if (tile.mirrorH === neighborCell.tile.id) {
+          mirrorH_position = direction;
+        }
+        
+        // Check if neighbor is vertical mirror of current tile
+        if (tile.mirrorV === neighborCell.tile.id) {
+          mirrorV_position = direction;
+        }
+      }
+    }
+  });
+  
+  return { mirrorH_position, mirrorV_position };
+}
+
+/**
+ * Calculate edge matches for a cell with its neighbors
+ */
+function calculateEdgeMatches(
+  cell: GridCell,
+  grid: GridCell[],
+  gridWidth: number,
+  gridHeight: number
+): { northMatch: number; eastMatch: number; southMatch: number; westMatch: number; neighborScore: number } {
+  const x = cell.x;
+  const y = cell.y;
+  const tile = cell.tile!;
+  
+  let northMatch = 0, eastMatch = 0, southMatch = 0, westMatch = 0;
+  
+  // Check North neighbor (y - 1)
+  if (y > 0) {
+    const northIndex = (y - 1) * gridWidth + x;
+    const northCell = grid[northIndex];
+    if (northCell?.tile && northCell.tile.edgeS === tile.edgeN) {
+      northMatch = 1;
+    }
+  }
+  
+  // Check East neighbor (x + 1)
+  if (x < gridWidth - 1) {
+    const eastIndex = y * gridWidth + (x + 1);
+    const eastCell = grid[eastIndex];
+    if (eastCell?.tile && eastCell.tile.edgeW === tile.edgeE) {
+      eastMatch = 1;
+    }
+  }
+  
+  // Check South neighbor (y + 1)
+  if (y < gridHeight - 1) {
+    const southIndex = (y + 1) * gridWidth + x;
+    const southCell = grid[southIndex];
+    if (southCell?.tile && southCell.tile.edgeN === tile.edgeS) {
+      southMatch = 1;
+    }
+  }
+  
+  // Check West neighbor (x - 1)
+  if (x > 0) {
+    const westIndex = y * gridWidth + (x - 1);
+    const westCell = grid[westIndex];
+    if (westCell?.tile && westCell.tile.edgeE === tile.edgeW) {
+      westMatch = 1;
+    }
+  }
+  
+  const neighborScore = northMatch + eastMatch + southMatch + westMatch;
+  
+  return { northMatch, eastMatch, southMatch, westMatch, neighborScore };
+}
+
+/**
+ * Export current grid state to CSV format with enhanced analytical data
  */
 export function exportGridToCSV(
   grid: GridCell[], 
@@ -47,11 +161,29 @@ export function exportGridToCSV(
   try {
     const exportData: GridExportData[] = [];
     
-    // Convert grid to export format
+    // Debug: Log highlighting info
+    console.log('🔍 Export Debug:', {
+      highlightedTilesSize: highlightedTiles.size,
+      highlightedTiles: Array.from(highlightedTiles),
+      highlightType
+    });
+    
+    // Convert grid to export format with enhanced data
     grid.forEach((cell) => {
       if (cell.tile) {
         const cellKey = `${cell.x}-${cell.y}`;
         const isHighlighted = highlightedTiles.has(cellKey);
+        
+        // Calculate edge matches with neighbors
+        const edgeMatches = calculateEdgeMatches(cell, grid, gridWidth, gridHeight);
+        
+        // Calculate mirror positions
+        const mirrorPositions = calculateMirrorPositions(cell, grid, gridWidth, gridHeight);
+        
+        // Debug individual cell highlight check
+        if (isHighlighted) {
+          console.log(`✅ Cell ${cellKey} is highlighted!`);
+        }
         
         exportData.push({
           row: cell.y + 1, // 1-based for user friendliness
@@ -63,12 +195,20 @@ export function exportGridToCSV(
           westEdge: cell.tile.edgeW,
           rotation: cell.rotation || 0,
           isHighlighted,
-          highlightType: isHighlighted ? highlightType : ''
+          highlightType: isHighlighted ? highlightType : '',
+          shapeFamily: cell.tile.shape,
+          northMatch: edgeMatches.northMatch,
+          eastMatch: edgeMatches.eastMatch,
+          southMatch: edgeMatches.southMatch,
+          westMatch: edgeMatches.westMatch,
+          neighborScore: edgeMatches.neighborScore,
+          mirrorH_position: mirrorPositions.mirrorH_position,
+          mirrorV_position: mirrorPositions.mirrorV_position
         });
       }
     });
 
-    // Generate CSV header
+    // Generate CSV header with enhanced fields
     const headers = [
       'row',
       'col',
@@ -79,10 +219,18 @@ export function exportGridToCSV(
       'westEdge',
       'rotation',
       'isHighlighted',
-      'highlightType'
+      'highlightType',
+      'shapeFamily',
+      'northMatch',
+      'eastMatch',
+      'southMatch',
+      'westMatch',
+      'neighborScore',
+      'mirrorH_position',
+      'mirrorV_position'
     ];
 
-    // Generate CSV rows
+    // Generate CSV rows with enhanced data
     const csvRows = [
       headers.join(','),
       ...exportData.map(row => [
@@ -95,7 +243,15 @@ export function exportGridToCSV(
         row.westEdge,
         row.rotation,
         row.isHighlighted,
-        row.highlightType
+        row.highlightType,
+        row.shapeFamily,
+        row.northMatch,
+        row.eastMatch,
+        row.southMatch,
+        row.westMatch,
+        row.neighborScore,
+        row.mirrorH_position,
+        row.mirrorV_position
       ].join(','))
     ];
 
@@ -105,9 +261,12 @@ export function exportGridToCSV(
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const downloadUrl = URL.createObjectURL(blob);
     
+    // Count highlighted cells in the export
+    const highlightedCount = exportData.filter(row => row.isHighlighted).length;
+    
     return {
       success: true,
-      message: `Exported ${exportData.length} tiles with highlighting data`,
+      message: `Exported ${exportData.length} tiles (${highlightedCount} highlighted) with analytical data`,
       csvData: csvContent,
       downloadUrl
     };
@@ -154,6 +313,9 @@ export function importGridFromCSV(
         message: `Missing required headers: ${missingHeaders.join(', ')}`
       };
     }
+
+    // Check if this is an enhanced CSV (has new fields)
+    const hasEnhancedFields = headers.includes('shapeFamily') && headers.includes('neighborScore');
 
     // Create tile lookup map
     const tileMap = new Map<string, TileData>();
@@ -252,6 +414,10 @@ export function importGridFromCSV(
     }
     if (highlightedCells.size > 0) {
       message += `, ${highlightedCells.size} highlighted cells restored`;
+    }
+    
+    if (hasEnhancedFields) {
+      message += ` (enhanced CSV format with analytical data)`;
     }
 
     return {

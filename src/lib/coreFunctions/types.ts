@@ -9,7 +9,7 @@ export interface GridCell {
   x: number;
   y: number;
   tile?: TileData;
-  // No rotation needed - tiles from CSV already have correct orientation
+  rotation?: number;
 }
 
 // Result type for function execution

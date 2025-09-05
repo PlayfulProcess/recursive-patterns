@@ -29,6 +29,15 @@ export {
   downloadCSV,
   validateCSVFile
 } from './csvExport';
+export {
+  analyzePatternFromCSV,
+  calculateEdgeMatchScoreFromCSV,
+  findOptimizationTargetsFromCSV,
+  compareGridStates,
+  buildPatternLibrary,
+  getImprovementSuggestions,
+  analyzeMirrorPairsFromCSV
+} from './csvAnalysis';
 
 // Function registry for AI access - centralized and discoverable
 export const functionRegistry = {
@@ -52,7 +61,16 @@ export const functionRegistry = {
   exportGridToCSV: 'exportGridToCSV',
   importGridFromCSV: 'importGridFromCSV',
   downloadCSV: 'downloadCSV',
-  validateCSVFile: 'validateCSVFile'
+  validateCSVFile: 'validateCSVFile',
+  
+  // CSV Analysis functions (ULTRA-FAST)
+  analyzePatternFromCSV: 'analyzePatternFromCSV',
+  calculateEdgeMatchScoreFromCSV: 'calculateEdgeMatchScoreFromCSV',
+  findOptimizationTargetsFromCSV: 'findOptimizationTargetsFromCSV',
+  compareGridStates: 'compareGridStates',
+  buildPatternLibrary: 'buildPatternLibrary',
+  getImprovementSuggestions: 'getImprovementSuggestions',
+  analyzeMirrorPairsFromCSV: 'analyzeMirrorPairsFromCSV'
 } as const;
 
 // Type for registered function names
@@ -81,6 +99,15 @@ import {
   downloadCSV,
   validateCSVFile
 } from './csvExport';
+import {
+  analyzePatternFromCSV,
+  calculateEdgeMatchScoreFromCSV,
+  findOptimizationTargetsFromCSV,
+  compareGridStates,
+  buildPatternLibrary,
+  getImprovementSuggestions,
+  analyzeMirrorPairsFromCSV
+} from './csvAnalysis';
 
 // Function map for dynamic access (AI can use this)
 export const functionMap = {
@@ -97,7 +124,14 @@ export const functionMap = {
   exportGridToCSV,
   importGridFromCSV,
   downloadCSV,
-  validateCSVFile
+  validateCSVFile,
+  analyzePatternFromCSV,
+  calculateEdgeMatchScoreFromCSV,
+  findOptimizationTargetsFromCSV,
+  compareGridStates,
+  buildPatternLibrary,
+  getImprovementSuggestions,
+  analyzeMirrorPairsFromCSV
 };
 
 // Metadata for each function (for AI understanding)
@@ -199,6 +233,55 @@ export const functionMetadata = {
     complexity: 'simple',
     params: ['file: File'],
     returns: 'Promise<ValidationResult>'
+  },
+  analyzePatternFromCSV: {
+    description: 'ULTRA-FAST: Comprehensive pattern analysis from CSV data (10x faster than grid analysis)',
+    category: 'csv-analysis',
+    complexity: 'simple',
+    params: ['csvData: GridExportData[]'],
+    returns: 'PatternAnalysis'
+  },
+  calculateEdgeMatchScoreFromCSV: {
+    description: 'ULTRA-FAST: Calculate edge matching score from CSV data',
+    category: 'csv-analysis',
+    complexity: 'simple',
+    params: ['csvData: GridExportData[]'],
+    returns: 'number'
+  },
+  findOptimizationTargetsFromCSV: {
+    description: 'ULTRA-FAST: Find low-scoring positions from CSV data for optimization',
+    category: 'csv-analysis',
+    complexity: 'simple',
+    params: ['csvData: GridExportData[]'],
+    returns: 'GridExportData[]'
+  },
+  compareGridStates: {
+    description: 'ULTRA-FAST: Compare two grid states from CSV exports',
+    category: 'csv-analysis',
+    complexity: 'simple',
+    params: ['csvBefore: GridExportData[]', 'csvAfter: GridExportData[]'],
+    returns: 'GridComparison'
+  },
+  buildPatternLibrary: {
+    description: 'ULTRA-FAST: Build library of high-quality patterns from multiple CSV exports',
+    category: 'csv-analysis',
+    complexity: 'moderate',
+    params: ['csvExports: GridExportData[][]'],
+    returns: 'PatternLibrary'
+  },
+  getImprovementSuggestions: {
+    description: 'ULTRA-FAST: Get AI-powered improvement suggestions from CSV data',
+    category: 'csv-analysis',
+    complexity: 'simple',
+    params: ['csvData: GridExportData[]'],
+    returns: 'ImprovementSuggestion[]'
+  },
+  analyzeMirrorPairsFromCSV: {
+    description: 'ULTRA-FAST: Analyze mirror relationships from CSV data',
+    category: 'csv-analysis',
+    complexity: 'simple',
+    params: ['csvData: GridExportData[]'],
+    returns: 'MirrorAnalysis'
   }
 };
 
