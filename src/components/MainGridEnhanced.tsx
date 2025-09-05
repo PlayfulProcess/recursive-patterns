@@ -16,7 +16,11 @@ import {
   calculatePatternScore,
   findAllMirrorPairs,
   iterativeImprove,
-  GridCell
+  GridCell,
+  exportGridToCSV,
+  importGridFromCSV,
+  downloadCSV,
+  validateCSVFile
 } from '../lib/coreFunctions';
 import { maximizeEdgeMatching, calculateTotalScore } from '@/lib/maxEdgeMatching';
 
@@ -68,6 +72,7 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
   const [isOptimizing, setIsOptimizing] = useState<boolean>(false);
   const [optimizationProgress, setOptimizationProgress] = useState<string>('');
   const gridRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync external grid changes to internal state
   useEffect(() => {
@@ -636,6 +641,75 @@ ${score.totalScore > 0.7 ? '✅ Pattern looks great!' : '🔧 Pattern could be i
     }
   };
 
+  // CSV Export/Import Functions
+  const handleExportGrid = () => {
+    const result = exportGridToCSV(grid, highlightedTiles, highlightType);
+    
+    if (result.success && result.csvData) {
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+      const filename = `grid-export-${timestamp}.csv`;
+      
+      downloadCSV(result.csvData, filename);
+      setTestMessage(`✅ Grid exported successfully! ${result.message}`);
+      
+      // Clear message after 5 seconds
+      setTimeout(() => setTestMessage(''), 5000);
+    } else {
+      setTestMessage(`❌ Export failed: ${result.message}`);
+      setTimeout(() => setTestMessage(''), 5000);
+    }
+  };
+
+  const handleImportGrid = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file
+    const validation = await validateCSVFile(file);
+    if (!validation.valid) {
+      setTestMessage(`❌ ${validation.message}`);
+      setTimeout(() => setTestMessage(''), 5000);
+      return;
+    }
+
+    if (!validation.data) return;
+
+    // Import grid
+    const result = importGridFromCSV(validation.data, allTiles);
+    
+    if (result.success && result.grid) {
+      setGrid(result.grid);
+      
+      // Restore highlighting if present
+      if (result.highlightedCells && result.highlightedCells.size > 0) {
+        setHighlightedTiles(result.highlightedCells);
+        setHighlightType(result.highlightType || '');
+      } else {
+        clearHighlights();
+      }
+      
+      setTestMessage(`✅ Grid imported successfully! ${result.message}`);
+      
+      // Clear message after 7 seconds (longer for import results)
+      setTimeout(() => setTestMessage(''), 7000);
+    } else {
+      setTestMessage(`❌ Import failed: ${result.message}`);
+      setTimeout(() => setTestMessage(''), 5000);
+    }
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const testFindEdgeMatches = (direction: 'north' | 'south' | 'east' | 'west') => {
     console.log('🔗 testFindEdgeMatches called with direction:', direction);
     
@@ -963,6 +1037,28 @@ ${score.totalScore > 0.7 ? '✅ Pattern looks great!' : '🔧 Pattern could be i
           </button>
         </div>
 
+        {/* CSV Export/Import Buttons */}
+        <div className="flex flex-wrap gap-3 mb-4">
+          <button 
+            onClick={handleExportGrid}
+            className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white rounded-lg
+                     hover:bg-green-600 transition-all duration-200 font-semibold
+                     hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <span>📤</span>
+            Export Grid to CSV
+          </button>
+          <button 
+            onClick={handleImportGrid}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-lg
+                     hover:bg-blue-600 transition-all duration-200 font-semibold
+                     hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <span>📥</span>
+            Import Grid from CSV
+          </button>
+        </div>
+
         {/* Recursive Function Buttons - Require Selected Cell */}
         <div className="mb-4">
           <div className="text-sm text-gray-400 mb-2">
@@ -1261,6 +1357,15 @@ ${score.totalScore > 0.7 ? '✅ Pattern looks great!' : '🔧 Pattern could be i
           <span className="text-yellow-400">Duplicates: {duplicates.size}</span>
         )}
       </div>
+
+      {/* Hidden file input for CSV import */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept=".csv"
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+      />
 
       {/* Tile Selector Modal */}
       {showTileSelector && (

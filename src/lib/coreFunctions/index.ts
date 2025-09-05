@@ -23,6 +23,12 @@ export {
   findAllMirrorPairs, 
   iterativeImprove 
 } from './analysis';
+export {
+  exportGridToCSV,
+  importGridFromCSV,
+  downloadCSV,
+  validateCSVFile
+} from './csvExport';
 
 // Function registry for AI access - centralized and discoverable
 export const functionRegistry = {
@@ -40,7 +46,13 @@ export const functionRegistry = {
   buildTileRelationships: 'buildTileRelationships',
   findMirrorTile: 'findMirrorTile',
   findRotationFamily: 'findRotationFamily',
-  findEdgeMatches: 'findEdgeMatches'
+  findEdgeMatches: 'findEdgeMatches',
+  
+  // CSV Export/Import functions
+  exportGridToCSV: 'exportGridToCSV',
+  importGridFromCSV: 'importGridFromCSV',
+  downloadCSV: 'downloadCSV',
+  validateCSVFile: 'validateCSVFile'
 } as const;
 
 // Type for registered function names
@@ -63,6 +75,12 @@ import {
   findAllMirrorPairs, 
   iterativeImprove 
 } from './analysis';
+import {
+  exportGridToCSV,
+  importGridFromCSV,
+  downloadCSV,
+  validateCSVFile
+} from './csvExport';
 
 // Function map for dynamic access (AI can use this)
 export const functionMap = {
@@ -75,7 +93,11 @@ export const functionMap = {
   buildTileRelationships,
   findMirrorTile,
   findRotationFamily,
-  findEdgeMatches
+  findEdgeMatches,
+  exportGridToCSV,
+  importGridFromCSV,
+  downloadCSV,
+  validateCSVFile
 };
 
 // Metadata for each function (for AI understanding)
@@ -149,6 +171,34 @@ export const functionMetadata = {
     complexity: 'moderate',
     params: ['currentTile: TileData', 'direction: string', 'relationships: TileRelationships'],
     returns: 'TileData[]'
+  },
+  exportGridToCSV: {
+    description: 'Export current grid state to CSV format with highlighting information',
+    category: 'data-management',
+    complexity: 'simple',
+    params: ['grid: GridCell[]', 'highlightedTiles: Set<string>', 'highlightType: string', 'gridWidth?: number', 'gridHeight?: number'],
+    returns: 'ExportResult'
+  },
+  importGridFromCSV: {
+    description: 'Import grid state from CSV data with highlighting restoration',
+    category: 'data-management',
+    complexity: 'moderate',
+    params: ['csvData: string', 'allTiles: TileData[]', 'gridWidth?: number', 'gridHeight?: number'],
+    returns: 'ImportResult'
+  },
+  downloadCSV: {
+    description: 'Trigger download of CSV file to user device',
+    category: 'data-management',
+    complexity: 'simple',
+    params: ['csvData: string', 'filename?: string'],
+    returns: 'void'
+  },
+  validateCSVFile: {
+    description: 'Validate CSV file before importing, checks format and size',
+    category: 'data-management',
+    complexity: 'simple',
+    params: ['file: File'],
+    returns: 'Promise<ValidationResult>'
   }
 };
 
