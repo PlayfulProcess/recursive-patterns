@@ -7,16 +7,17 @@ import ColorPalette, { ColorScheme } from '@/components/ColorPalette';
 import MiniPlayground from '@/components/MiniPlayground';
 import MainGridEnhanced from '@/components/MainGridEnhanced';
 import AIPatternChatPopup from '@/components/AIPatternChatPopup';
+import { TileProvider, useTiles } from '@/contexts/TileContext';
 
 interface GridCell {
   x: number;
   y: number;
   tile?: TileData;
-  rotation?: number;
+  // No rotation needed - tiles from CSV already have correct orientation
 }
 
-export default function Home() {
-  const [tiles, setTiles] = useState<TileData[]>([]);
+function HomeContent() {
+  const { tiles, loading, error, uniqueTiles } = useTiles();
   const [selectedTile, setSelectedTile] = useState<TileData | undefined>();
   const [customColors, setCustomColors] = useState<ColorScheme>({
     a: '#E8B4B8', // Pink
@@ -37,42 +38,10 @@ export default function Home() {
   });
 
   useEffect(() => {
-    const loadTiles = async () => {
-      try {
-        // Try direct CSV file first, then API fallback
-        let response = await fetch('/patterns3.csv');
-        if (!response.ok) {
-          response = await fetch('/api/patterns');
-        }
-        const csvText = await response.text();
-        const lines = csvText.trim().split('\n');
-        const headers = lines[0].split(',');
-        
-        const tilesData: TileData[] = lines.slice(1).map(line => {
-          const values = line.split(',');
-          return {
-            id: values[0]?.trim(),
-            // CSV columns: edge-S, edge-W, edge-N, edge-E
-            // Map to proper Euclidean positions:
-            edgeS: values[1]?.trim(), // edge-S from CSV → South (Bottom)
-            edgeW: values[2]?.trim(), // edge-W from CSV → West (Left)
-            edgeN: values[3]?.trim(), // edge-N from CSV → North (Top)
-            edgeE: values[4]?.trim(), // edge-E from CSV → East (Right)
-            shape: parseInt(values[5]?.trim()) || 0,
-            mirrorH: values[6]?.trim(),
-            mirrorV: values[7]?.trim()
-          };
-        });
-        
-        setTiles(tilesData);
-        setSelectedTile(tilesData[0]);
-      } catch (error) {
-        console.error('Error loading CSV:', error);
-      }
-    };
-
-    loadTiles();
-  }, []);
+    if (tiles.length > 0 && !selectedTile) {
+      setSelectedTile(tiles[0]);
+    }
+  }, [tiles, selectedTile]);
 
   const handleRowClick = (tile: TileData) => {
     setSelectedTile(tile);
@@ -86,35 +55,45 @@ export default function Home() {
     }));
   };
 
-  // Fill grid with diverse tiles for AI testing
+  // Fill grid with ALL 96 tiles (1-to-1 mapping, no duplicates)
   useEffect(() => {
-    if (tiles.length > 0 && mainGrid.every(cell => !cell.tile)) {
-      console.log('🎯 Filling grid with diverse tiles for AI testing...');
-      console.log('📊 Available tiles:', tiles.length);
+    if (tiles.length === 96 && mainGrid.every(cell => !cell.tile)) {
+      console.log('🎯 Filling grid with all 96 tiles (1-to-1 mapping)...');
       
       const newGrid = [...mainGrid];
       
-      // Use exactly the number of available tiles (no duplicates)
-      const maxTiles = Math.min(tiles.length, newGrid.length);
-      
-      // Shuffle tiles for better diversity
+      // Shuffle all 96 tiles for random placement
       const shuffledTiles = [...tiles].sort(() => Math.random() - 0.5);
       
-      // Fill grid with unique tiles (1-to-1 mapping)
-      for (let i = 0; i < maxTiles; i++) {
+      // Fill grid with ALL tiles (exact 1-to-1 mapping)
+      for (let i = 0; i < Math.min(shuffledTiles.length, newGrid.length); i++) {
         newGrid[i] = {
           ...newGrid[i],
-          tile: shuffledTiles[i], // Use exact tile, not modulo
-          rotation: Math.floor(Math.random() * 4) * 90
+          tile: shuffledTiles[i] // Each tile used exactly once
         };
       }
       
       setMainGrid(newGrid);
-      console.log('✅ Grid filled with', newGrid.filter(c => c.tile).length, 'tiles');
-      console.log('🎲 Used', new Set(newGrid.filter(c => c.tile).map(c => c.tile?.id)).size, 'unique tile IDs');
-      console.log('🧩 First few tile IDs:', newGrid.filter(c => c.tile).slice(0, 5).map(c => c.tile?.id));
+      console.log('✅ Grid filled with ALL tiles:', newGrid.filter(c => c.tile).length, '/ 96');
+      console.log('🎯 No duplicates: Each tile used exactly once');
     }
   }, [tiles, mainGrid]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen p-8 bg-gray-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading tiles...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen p-8 bg-gray-900 flex items-center justify-center">
+        <div className="text-red-400 text-xl">Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-8 bg-gray-900">
@@ -176,5 +155,13 @@ export default function Home() {
         />
       </div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <TileProvider>
+      <HomeContent />
+    </TileProvider>
   );
 }

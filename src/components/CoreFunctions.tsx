@@ -11,7 +11,7 @@ export interface GridCell {
   x: number;
   y: number;
   tile?: TileData;
-  rotation?: number;
+  // No rotation needed - tiles from CSV already have correct orientation
 }
 
 // Result type for function execution
@@ -49,8 +49,7 @@ export function fillGrid(grid: GridCell[], allTiles: TileData[]): GridCell[] {
     if (!newGrid[i].tile && tileIndex < unusedTiles.length) {
       newGrid[i] = {
         ...newGrid[i],
-        tile: unusedTiles[tileIndex],
-        rotation: 0
+        tile: unusedTiles[tileIndex]
       };
       tileIndex++;
     }
@@ -100,16 +99,12 @@ export function optimizeEdgeMatching(grid: GridCell[], gridWidth: number = 12, g
  * Fixed to only swap tile data, not coordinates
  */
 function swapTilesNoHistory(grid: GridCell[], pos1: number, pos2: number): void {
-  // Only swap the tile and rotation, keep x,y coordinates correct
+  // Only swap the tiles, keep x,y coordinates correct
   const tile1 = grid[pos1].tile;
-  const rotation1 = grid[pos1].rotation;
   const tile2 = grid[pos2].tile;
-  const rotation2 = grid[pos2].rotation;
   
   grid[pos1].tile = tile2;
-  grid[pos1].rotation = rotation2;
   grid[pos2].tile = tile1;
-  grid[pos2].rotation = rotation1;
 }
 
 /**
@@ -201,27 +196,10 @@ function isRotationMatch(
   grid: GridCell[],
   columns: number
 ): boolean {
-  // Check if rotating this tile would create better matches
-  // This is a simplified version - could check all 4 rotations
-  const baseEdges = getTileEdgeColors(tile, 0);
-  const rotated90Edges = getTileEdgeColors(tile, 90);
-  
-  let baseMatches = 0;
-  let rotatedMatches = 0;
-  
-  // Check matches for base vs rotated
-  // Left neighbor
-  if (col > 0) {
-    const leftPos = currentPos - 1;
-    const leftTile = grid[leftPos]?.tile;
-    if (leftTile) {
-      const leftEdges = getTileEdgeColors(leftTile, grid[leftPos].rotation || 0);
-      if (leftEdges.right === baseEdges.left) baseMatches++;
-      if (leftEdges.right === rotated90Edges.left) rotatedMatches++;
-    }
-  }
-  
-  return rotatedMatches > baseMatches;
+  // Since we use direct tile IDs from CSV, rotation matching is handled by tile selection
+  // This function now checks if this tile has good rotation variants available
+  // For now, return false as we handle rotations through CSV lookup
+  return false;
 }
 
 /**
@@ -236,29 +214,22 @@ function countMatchingEdges(
   columns: number
 ): number {
   let matchCount = 0;
-  const tileEdges = getTileEdgeColors(tile, 0); // Base rotation
   
-  // Check left neighbor
+  // Check left neighbor - direct edge comparison
   if (col > 0) {
     const leftPos = currentPos - 1;
     const leftTile = grid[leftPos]?.tile;
-    if (leftTile) {
-      const leftEdges = getTileEdgeColors(leftTile, grid[leftPos].rotation || 0);
-      if (leftEdges.right === tileEdges.left) {
-        matchCount++;
-      }
+    if (leftTile && leftTile.edgeE === tile.edgeW) {
+      matchCount++;
     }
   }
   
-  // Check top neighbor
+  // Check top neighbor - direct edge comparison
   if (row > 0) {
     const topPos = currentPos - columns;
     const topTile = grid[topPos]?.tile;
-    if (topTile) {
-      const topEdges = getTileEdgeColors(topTile, grid[topPos].rotation || 0);
-      if (topEdges.bottom === tileEdges.top) {
-        matchCount++;
-      }
+    if (topTile && topTile.edgeS === tile.edgeN) {
+      matchCount++;
     }
   }
   
@@ -392,18 +363,27 @@ export function findRotationFamily(
   relationships: TileRelationships
 ): TileData[] {
   
-  const shapeKey = currentTile.shape.toString();
-  const shapeFamily = relationships.shapeGroups.get(shapeKey);
-  if (!shapeFamily) {
-    console.log(`⚠️ No shape family found for: ${currentTile.shape}`);
-    return [];
-  }
-
-  // Filter out the current tile to get rotation variants
-  const rotationVariants = shapeFamily.filter(tile => tile.id !== currentTile.id);
+  // Get the rotation IDs from the tile
+  const rotationIds = [
+    currentTile.rotation0,
+    currentTile.rotation90,
+    currentTile.rotation180,
+    currentTile.rotation270
+  ];
   
-  console.log(`🔄 Found ${rotationVariants.length} rotation variants for shape: ${currentTile.shape}`);
-  return rotationVariants;
+  // Find the actual tiles for each rotation
+  const rotationFamily: TileData[] = [];
+  rotationIds.forEach(id => {
+    if (id) {
+      const tile = relationships.tileById.get(id);
+      if (tile) {
+        rotationFamily.push(tile);
+      }
+    }
+  });
+  
+  console.log(`🔄 Found ${rotationFamily.length} rotation variants for tile: ${currentTile.id}`);
+  return rotationFamily;
 }
 
 /**

@@ -8,13 +8,12 @@ import { ColorScheme } from '@/components/ColorPalette';
 interface TileSelectorProps {
   allTiles: TileData[];
   customColors: ColorScheme;
-  onTileSelect: (tile: TileData, rotation: number) => void;
+  onTileSelect: (tile: TileData) => void;
   onClose: () => void;
 }
 
 export default function TileSelector({ allTiles, customColors, onTileSelect, onClose }: TileSelectorProps) {
   const [selectedTile, setSelectedTile] = useState<TileData | null>(null);
-  const [rotation, setRotation] = useState(0);
 
   const handleTileClick = (tile: TileData) => {
     setSelectedTile(tile);
@@ -22,7 +21,7 @@ export default function TileSelector({ allTiles, customColors, onTileSelect, onC
 
   const handlePlace = () => {
     if (selectedTile) {
-      onTileSelect(selectedTile, rotation);
+      onTileSelect(selectedTile);
       onClose();
     }
   };
@@ -84,27 +83,16 @@ export default function TileSelector({ allTiles, customColors, onTileSelect, onC
               <div className="text-white text-sm mb-4">
                 <p><strong>ID:</strong> {selectedTile.id}</p>
                 <p><strong>Edges:</strong> N:{selectedTile.edgeN} E:{selectedTile.edgeE} S:{selectedTile.edgeS} W:{selectedTile.edgeW}</p>
-                <p><strong>Rotation:</strong> {rotation}°</p>
+                <p><strong>Shape:</strong> {selectedTile.shape}</p>
               </div>
 
               <div className="mb-4">
-                <label className="block text-white text-sm mb-2">Rotation:</label>
-                <div className="flex gap-2">
-                  {[0, 90, 180, 270].map((rot) => (
-                    <button
-                      key={rot}
-                      onClick={() => setRotation(rot)}
-                      className={`
-                        px-3 py-1 rounded text-sm transition-colors
-                        ${rotation === rot 
-                          ? 'bg-blue-600 text-white' 
-                          : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
-                        }
-                      `}
-                    >
-                      {rot}°
-                    </button>
-                  ))}
+                <label className="block text-white text-sm mb-2">Rotation Variants:</label>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div><strong>0°:</strong> {selectedTile.rotation0}</div>
+                  <div><strong>90°:</strong> {selectedTile.rotation90}</div>
+                  <div><strong>180°:</strong> {selectedTile.rotation180}</div>
+                  <div><strong>270°:</strong> {selectedTile.rotation270}</div>
                 </div>
               </div>
 

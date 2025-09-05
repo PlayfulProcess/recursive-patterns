@@ -4,6 +4,7 @@ import React from 'react';
 import TileRenderer from './TileRenderer';
 import { TileData } from './CSVTable';
 import { ColorScheme } from './ColorPalette';
+import { getRotationFamily } from '@/lib/dataPrep';
 
 interface TileFamilyProps {
   selectedTile: TileData;
@@ -12,20 +13,14 @@ interface TileFamilyProps {
 }
 
 const TileFamily: React.FC<TileFamilyProps> = ({ selectedTile, allTiles, customColors }) => {
-  // Find all 4 rotations of the same shape
-  const getRotationFamily = (tile: TileData): TileData[] => {
-    return allTiles.filter(t => t.shape === tile.shape).sort((a, b) => {
-      const rotationOrder = ['S', 'W', 'N', 'E'];
-      return rotationOrder.indexOf(a.rotation) - rotationOrder.indexOf(b.rotation);
-    });
-  };
-
-  // Find mirror tiles
+  // Get actual rotation family from dataPrep
+  const rotationFamily = getRotationFamily(selectedTile, allTiles);
+  
+  // Find mirror tiles by ID
   const getMirrorTile = (tileId: string): TileData | undefined => {
     return allTiles.find(t => t.id === tileId);
   };
 
-  const rotationFamily = getRotationFamily(selectedTile);
   const mirrorH = getMirrorTile(selectedTile.mirrorH);
   const mirrorV = getMirrorTile(selectedTile.mirrorV);
 
@@ -46,24 +41,37 @@ const TileFamily: React.FC<TileFamilyProps> = ({ selectedTile, allTiles, customC
 
       {/* Rotation Family */}
       <div className="flex flex-col items-center">
-        <h3 className="text-white text-lg font-bold mb-4">All Rotations</h3>
+        <h3 className="text-white text-lg font-bold mb-4">Rotations of Same Tile</h3>
         <div className="grid grid-cols-2 gap-3">
-          {rotationFamily.map((tile) => (
-            <div
-              key={tile.id}
-              className={`${
-                tile.id === selectedTile.id 
-                  ? 'border-2 border-blue-400 rounded' 
-                  : 'border border-gray-600 rounded'
-              } p-1`}
-            >
-              <TileRenderer
-                tile={tile}
-                size={80}
-                customColors={customColors}
-              />
-            </div>
-          ))}
+          {rotationFamily.map((tile, index) => {
+            // Determine rotation degree based on which rotation it is
+            const rotationDegrees = ['0°', '90°', '180°', '270°'];
+            const isCurrentRotation = tile.id === selectedTile.id;
+            
+            return (
+              <div key={tile.id} className="text-center">
+                <div
+                  className={`${
+                    isCurrentRotation
+                      ? 'border-2 border-blue-400 rounded' 
+                      : 'border border-gray-600 rounded'
+                  } p-1 mb-1`}
+                >
+                  <TileRenderer
+                    tile={tile}
+                    size={80}
+                    customColors={customColors}
+                  />
+                </div>
+                <p className={`text-xs ${isCurrentRotation ? 'text-blue-400 font-bold' : 'text-gray-400'}`}>
+                  {tile.id}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-2 text-xs text-gray-500 text-center">
+          🔄 Same pattern, different orientations
         </div>
       </div>
 

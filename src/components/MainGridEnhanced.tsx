@@ -511,7 +511,7 @@ ${score.totalScore > 0.7 ? '✅ Pattern looks great!' : '🔧 Pattern could be i
       setHighlightedTiles(new Set(rotationPositions));
       setHighlightType('rotation');
       
-      setTestMessage(`🔄 Found ${rotationFamily.length} rotation variants for shape "${selectedCell.tile.shape}" (highlighted in blue): ${rotationFamily.map(t => t.id).join(', ')}`);
+      setTestMessage(`🔄 Found ${rotationFamily.length} rotations of tile "${selectedCell.tile.id}" (highlighted in blue): ${rotationFamily.map(t => t.id).join(', ')}`);
     } else {
       clearHighlights();
       setTestMessage(`❌ No rotation variants found for ${selectedCell.tile.id}`);
@@ -519,6 +519,10 @@ ${score.totalScore > 0.7 ? '✅ Pattern looks great!' : '🔧 Pattern could be i
   };
 
   const selectSameShape = () => {
+    const selectedCell = Array.from(selectedCells).length === 1 
+      ? getCellFromKey(Array.from(selectedCells)[0]) 
+      : null;
+      
     if (!selectedCell?.tile) {
       setTestMessage('❌ Please select exactly one cell with a tile first');
       return;
@@ -848,7 +852,7 @@ ${score.totalScore > 0.7 ? '✅ Pattern looks great!' : '🔧 Pattern could be i
         {/* Recursive Function Buttons - Require Selected Cell */}
         <div className="mb-4">
           <div className="text-sm text-gray-400 mb-2">
-            🎯 Recursive Functions (select a tile first):
+            Analyze Tiles (select a tile first):
           </div>
           <div className="flex flex-wrap gap-2">
             <button 
