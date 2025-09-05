@@ -37,6 +37,12 @@ function HomeContent() {
     return cells;
   });
 
+  // State for filtered tiles from CSV table
+  const [filteredTiles, setFilteredTiles] = useState<{
+    tiles: TileData[];
+    shouldHighlight: boolean;
+  }>({ tiles: [], shouldHighlight: false });
+
   useEffect(() => {
     if (tiles.length > 0 && !selectedTile) {
       setSelectedTile(tiles[0]);
@@ -46,6 +52,10 @@ function HomeContent() {
   const handleRowClick = (tile: TileData) => {
     setSelectedTile(tile);
     // The highlighting will be handled by MainGridEnhanced component via the selectedTileFromTable prop
+  };
+
+  const handleFilteredTilesChange = (tiles: TileData[], shouldHighlight: boolean) => {
+    setFilteredTiles({ tiles, shouldHighlight });
   };
 
   const handleColorChange = (edge: 'a' | 'b' | 'c' | 'd', color: string) => {
@@ -126,6 +136,7 @@ function HomeContent() {
             data={tiles} 
             onRowClick={handleRowClick}
             selectedTile={selectedTile}
+            onFilteredTilesChange={handleFilteredTilesChange}
           />
         </div>
 
@@ -136,6 +147,7 @@ function HomeContent() {
           grid={mainGrid}
           onGridUpdate={setMainGrid}
           selectedTileFromTable={selectedTile}
+          filteredTiles={filteredTiles}
         />
 
         {/* AI Pattern Chat Popup */}

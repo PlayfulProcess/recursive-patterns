@@ -30,9 +30,13 @@ interface MainGridEnhancedProps {
   grid?: GridCell[];
   onGridUpdate?: (newGrid: GridCell[]) => void;
   selectedTileFromTable?: TileData;
+  filteredTiles?: {
+    tiles: TileData[];
+    shouldHighlight: boolean;
+  };
 }
 
-export default function MainGridEnhanced({ allTiles, customColors, grid: externalGrid, onGridUpdate, selectedTileFromTable }: MainGridEnhancedProps) {
+export default function MainGridEnhanced({ allTiles, customColors, grid: externalGrid, onGridUpdate, selectedTileFromTable, filteredTiles }: MainGridEnhancedProps) {
   const [internalGrid, setInternalGrid] = useState<GridCell[]>(() => {
     const cells: GridCell[] = [];
     for (let y = 0; y < 8; y++) {
@@ -103,6 +107,24 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
       }
     }
   }, [selectedTileFromTable]);
+
+  // Handle highlighting filtered tiles from CSV table
+  useEffect(() => {
+    if (filteredTiles?.shouldHighlight && filteredTiles.tiles.length > 0) {
+      // Find all positions of filtered tiles in the grid
+      const tileIds = filteredTiles.tiles.map(tile => tile.id);
+      const tilePositions = findTilePositions(tileIds);
+      if (tilePositions.length > 0) {
+        setHighlightedTiles(new Set(tilePositions));
+        setHighlightType('filtered-tiles');
+        setTestMessage(`🔍 Filter applied: ${filteredTiles.tiles.length} tiles highlighted (${tilePositions.length} positions in grid)`);
+        setTimeout(() => setTestMessage(''), 4000);
+      }
+    } else if (filteredTiles?.shouldHighlight === false) {
+      // Clear highlights when filter highlight is turned off
+      clearHighlights();
+    }
+  }, [filteredTiles]);
 
   // Helper function to get cell key
   const getCellKey = (cell: GridCell) => `${cell.x}-${cell.y}`;
