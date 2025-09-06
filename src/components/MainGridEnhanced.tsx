@@ -20,7 +20,12 @@ import {
   exportGridToCSV,
   importGridFromCSV,
   downloadCSV,
-  validateCSVFile
+  validateCSVFile,
+  optimizeGridConfigurable,
+  optimizeWithPreset,
+  optimizeForSingleColor,
+  OPTIMIZATION_PRESETS,
+  OptimizationResult
 } from '../lib/coreFunctions';
 import { maximizeEdgeMatching, calculateTotalScore } from '@/lib/maxEdgeMatching';
 
@@ -136,6 +141,18 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
   const gridRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [patternAnalysis, setPatternAnalysis] = useState<string>('');
+  const [selectedPreset, setSelectedPreset] = useState<string>('classic');
+  const [optimizationResult, setOptimizationResult] = useState<OptimizationResult | null>(null);
+  const [showCustomWeights, setShowCustomWeights] = useState<boolean>(false);
+  const [customWeights, setCustomWeights] = useState({
+    edgeMatching: 10,
+    mirrorBonus: 100,
+    rotationBonus: 50,
+    colorPriority: { a: 1, b: 1, c: 1, d: 1 },
+    shapeCluster: 20,
+    distancePenalty: 1
+  });
+  const [selectedTraversal, setSelectedTraversal] = useState<string>('row-major');
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -538,6 +555,123 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
     // Run the optimize edge matching function
     const newGrid = optimizeEdgeMatching(grid);
     setGrid(newGrid);
+  };
+
+  // NEW: Configurable optimization functions
+  const runOptimizeWithPreset = (presetName: string) => {
+    try {
+      console.log('🎯 Starting preset optimization:', presetName);
+      console.log('optimizeWithPreset function:', optimizeWithPreset);
+      console.log('OPTIMIZATION_PRESETS:', OPTIMIZATION_PRESETS);
+      
+      setTestMessage(`🎯 Optimizing with preset: ${presetName}...`);
+      
+      if (!optimizeWithPreset || typeof optimizeWithPreset !== 'function') {
+        throw new Error('optimizeWithPreset function is not available');
+      }
+      
+      const result = optimizeWithPreset(grid, allTiles, presetName as keyof typeof OPTIMIZATION_PRESETS);
+      
+      console.log('Optimization result:', result);
+      
+      setGrid(result.grid);
+      setOptimizationResult(result);
+      setTestMessage(`✅ ${presetName} optimization complete! ${result.swaps} swaps, ${result.executionTime.toFixed(1)}ms`);
+      
+      // Clear message after delay
+      setTimeout(() => setTestMessage(''), 4000);
+    } catch (error) {
+      console.error('Error in runOptimizeWithPreset:', error);
+      setTestMessage(`❌ Error: ${error.message}`);
+      setTimeout(() => setTestMessage(''), 4000);
+    }
+  };
+
+  const runOptimizeForColor = (color: 'a' | 'b' | 'c' | 'd') => {
+    try {
+      console.log('🎨 Starting color optimization:', color);
+      console.log('optimizeForSingleColor function:', optimizeForSingleColor);
+      
+      setTestMessage(`🎨 Optimizing for color ${color.toUpperCase()}...`);
+      
+      if (!optimizeForSingleColor || typeof optimizeForSingleColor !== 'function') {
+        throw new Error('optimizeForSingleColor function is not available');
+      }
+      
+      const result = optimizeForSingleColor(grid, allTiles, color);
+      
+      console.log('Color optimization result:', result);
+      
+      setGrid(result.grid);
+      setOptimizationResult(result);
+      setTestMessage(`✅ Color ${color.toUpperCase()} optimization complete! ${result.swaps} swaps, ${result.executionTime.toFixed(1)}ms`);
+      
+      // Clear message after delay
+      setTimeout(() => setTestMessage(''), 4000);
+    } catch (error) {
+      console.error('Error in runOptimizeForColor:', error);
+      setTestMessage(`❌ Error: ${error.message}`);
+      setTimeout(() => setTestMessage(''), 4000);
+    }
+  };
+
+  const runCustomOptimization = () => {
+    try {
+      console.log('⚡ Starting custom optimization');
+      console.log('optimizeGridConfigurable function:', optimizeGridConfigurable);
+      console.log('Custom weights:', customWeights);
+      console.log('Selected traversal:', selectedTraversal);
+      
+      setTestMessage('⚡ Running custom optimization...');
+      
+      if (!optimizeGridConfigurable || typeof optimizeGridConfigurable !== 'function') {
+        throw new Error('optimizeGridConfigurable function is not available');
+      }
+      
+      const result = optimizeGridConfigurable(grid, allTiles, {
+        weights: {
+          edgeMatching: customWeights.edgeMatching,
+          mirrorBonus: customWeights.mirrorBonus,
+          rotationBonus: customWeights.rotationBonus,
+          colorPriority: customWeights.colorPriority,
+          shapeCluster: customWeights.shapeCluster,
+          distancePenalty: customWeights.distancePenalty
+        },
+        traversal: selectedTraversal as any,
+        debug: false
+      });
+      
+      console.log('Custom optimization result:', result);
+      
+      setGrid(result.grid);
+      setOptimizationResult(result);
+      setTestMessage(`✅ Custom optimization complete! ${result.swaps} swaps, ${result.executionTime.toFixed(1)}ms`);
+      
+      // Clear message after delay
+      setTimeout(() => setTestMessage(''), 4000);
+    } catch (error) {
+      console.error('Error in runCustomOptimization:', error);
+      setTestMessage(`❌ Error: ${error.message}`);
+      setTimeout(() => setTestMessage(''), 4000);
+    }
+  };
+
+  // Update custom weights
+  const updateCustomWeight = (key: string, value: number) => {
+    setCustomWeights(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const updateColorPriority = (color: 'a' | 'b' | 'c' | 'd', value: number) => {
+    setCustomWeights(prev => ({
+      ...prev,
+      colorPriority: {
+        ...prev.colorPriority,
+        [color]: value
+      }
+    }));
   };
 
   const runOptimizeMirrorPlacement = () => {
@@ -1181,6 +1315,294 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
             <span>🪞</span>
             Optimize Mirrors
           </button>
+        </div>
+
+        {/* NEW: Configurable Optimization Controls */}
+        <div className="bg-gray-700 rounded-lg p-4 mb-4">
+          <h3 className="text-white font-semibold mb-3">⚡ New Configurable Optimization</h3>
+          
+          {/* Preset Selection Row */}
+          <div className="flex flex-wrap gap-3 mb-3">
+            <select
+              value={selectedPreset}
+              onChange={(e) => setSelectedPreset(e.target.value)}
+              className="px-3 py-2 bg-gray-600 text-white rounded border border-gray-500 focus:border-blue-500 focus:outline-none"
+            >
+              <option value="classic">Classic (Current Default)</option>
+              <option value="edgeFocused">Edge Focused</option>
+              <option value="mirrorHeavy">Mirror Heavy</option>
+              <option value="shapeClustered">Shape Clustered</option>
+              <option value="colorFocusedA">Color A Priority</option>
+              <option value="spiral">Spiral Pattern</option>
+              <option value="multiPass">Multi-Pass</option>
+            </select>
+            
+            <button 
+              onClick={() => runOptimizeWithPreset(selectedPreset)}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-700 text-white rounded-lg
+                       hover:bg-indigo-600 transition-all duration-200 font-semibold
+                       hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <span>🎯</span>
+              Run Preset
+            </button>
+
+            <button 
+              onClick={() => setShowCustomWeights(!showCustomWeights)}
+              className="flex items-center gap-2 px-4 py-2 bg-yellow-700 text-white rounded-lg
+                       hover:bg-yellow-600 transition-all duration-200 font-semibold
+                       hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <span>{showCustomWeights ? '📊' : '⚙️'}</span>
+              {showCustomWeights ? 'Hide Custom' : 'Custom Weights'}
+            </button>
+
+            {showCustomWeights && (
+              <button 
+                onClick={runCustomOptimization}
+                className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white rounded-lg
+                         hover:bg-green-600 transition-all duration-200 font-semibold
+                         hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <span>⚡</span>
+                Run Custom
+              </button>
+            )}
+          </div>
+
+          {/* Single Color Optimization Row */}
+          <div className="flex flex-wrap gap-3">
+            <span className="text-gray-300 text-sm py-2">Single Color Optimization:</span>
+            <button 
+              onClick={() => runOptimizeForColor('a')}
+              className="flex items-center gap-2 px-3 py-2 bg-pink-700 text-white rounded-lg
+                       hover:bg-pink-600 transition-all duration-200 font-semibold
+                       hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <span>🅰️</span>
+              Color A
+            </button>
+            <button 
+              onClick={() => runOptimizeForColor('b')}
+              className="flex items-center gap-2 px-3 py-2 bg-blue-700 text-white rounded-lg
+                       hover:bg-blue-600 transition-all duration-200 font-semibold
+                       hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <span>🅱️</span>
+              Color B
+            </button>
+            <button 
+              onClick={() => runOptimizeForColor('c')}
+              className="flex items-center gap-2 px-3 py-2 bg-orange-700 text-white rounded-lg
+                       hover:bg-orange-600 transition-all duration-200 font-semibold
+                       hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <span>🅲</span>
+              Color C
+            </button>
+            <button 
+              onClick={() => runOptimizeForColor('d')}
+              className="flex items-center gap-2 px-3 py-2 bg-green-700 text-white rounded-lg
+                       hover:bg-green-600 transition-all duration-200 font-semibold
+                       hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <span>🅳</span>
+              Color D
+            </button>
+          </div>
+
+          {/* Custom Weight Controls */}
+          {showCustomWeights && (
+            <div className="mt-4 p-4 bg-gray-800 rounded-lg">
+              <h4 className="text-white font-semibold mb-3">🎛️ Custom Weight Configuration</h4>
+              
+              {/* Traversal Pattern Selection */}
+              <div className="mb-4">
+                <label className="text-gray-300 text-sm block mb-2">Traversal Pattern:</label>
+                <select
+                  value={selectedTraversal}
+                  onChange={(e) => setSelectedTraversal(e.target.value)}
+                  className="px-3 py-2 bg-gray-600 text-white rounded border border-gray-500 focus:border-blue-500 focus:outline-none"
+                >
+                  <option value="row-major">Row Major (Default)</option>
+                  <option value="column-major">Column Major</option>
+                  <option value="spiral-clockwise">Spiral Clockwise</option>
+                  <option value="spiral-counter">Spiral Counter</option>
+                  <option value="diagonal">Diagonal Sweeps</option>
+                  <option value="block-2x2">2x2 Blocks</option>
+                  <option value="checkerboard">Checkerboard</option>
+                  <option value="random-walk">Random Walk</option>
+                </select>
+              </div>
+
+              {/* Weight Sliders */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* Edge Matching Weight */}
+                <div>
+                  <label className="text-gray-300 text-sm block mb-2">
+                    Edge Matching: <span className="text-white font-semibold">{customWeights.edgeMatching}</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="200"
+                    step="5"
+                    value={customWeights.edgeMatching}
+                    onChange={(e) => updateCustomWeight('edgeMatching', parseInt(e.target.value))}
+                    className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                  />
+                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>0</span><span>200</span>
+                  </div>
+                </div>
+
+                {/* Mirror Bonus Weight */}
+                <div>
+                  <label className="text-gray-300 text-sm block mb-2">
+                    Mirror Bonus: <span className="text-white font-semibold">{customWeights.mirrorBonus}</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="500"
+                    step="10"
+                    value={customWeights.mirrorBonus}
+                    onChange={(e) => updateCustomWeight('mirrorBonus', parseInt(e.target.value))}
+                    className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                  />
+                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>0</span><span>500</span>
+                  </div>
+                </div>
+
+                {/* Rotation Bonus Weight */}
+                <div>
+                  <label className="text-gray-300 text-sm block mb-2">
+                    Rotation Bonus: <span className="text-white font-semibold">{customWeights.rotationBonus}</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="200"
+                    step="5"
+                    value={customWeights.rotationBonus}
+                    onChange={(e) => updateCustomWeight('rotationBonus', parseInt(e.target.value))}
+                    className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                  />
+                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>0</span><span>200</span>
+                  </div>
+                </div>
+
+                {/* Shape Cluster Weight */}
+                <div>
+                  <label className="text-gray-300 text-sm block mb-2">
+                    Shape Cluster: <span className="text-white font-semibold">{customWeights.shapeCluster}</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="200"
+                    step="5"
+                    value={customWeights.shapeCluster}
+                    onChange={(e) => updateCustomWeight('shapeCluster', parseInt(e.target.value))}
+                    className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                  />
+                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>0</span><span>200</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Color Priority Sliders */}
+              <div className="mt-4">
+                <h5 className="text-gray-300 text-sm font-semibold mb-2">Color Priority Weights:</h5>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {(['a', 'b', 'c', 'd'] as const).map(color => (
+                    <div key={color}>
+                      <label className="text-gray-300 text-sm block mb-2">
+                        Color {color.toUpperCase()}: <span className="text-white font-semibold">{customWeights.colorPriority[color].toFixed(1)}</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="10"
+                        step="0.1"
+                        value={customWeights.colorPriority[color]}
+                        onChange={(e) => updateColorPriority(color, parseFloat(e.target.value))}
+                        className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                      />
+                      <div className="flex justify-between text-xs text-gray-400 mt-1">
+                        <span>0</span><span>10</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Distance Penalty */}
+              <div className="mt-4">
+                <label className="text-gray-300 text-sm block mb-2">
+                  Distance Penalty: <span className="text-white font-semibold">{customWeights.distancePenalty}</span>
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="20"
+                  step="1"
+                  value={customWeights.distancePenalty}
+                  onChange={(e) => updateCustomWeight('distancePenalty', parseInt(e.target.value))}
+                  className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                />
+                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                  <span>0</span><span>20</span>
+                </div>
+              </div>
+
+              {/* Quick Preset Buttons */}
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="text-gray-300 text-sm py-2">Quick Sets:</span>
+                <button 
+                  onClick={() => setCustomWeights({edgeMatching: 100, mirrorBonus: 10, rotationBonus: 5, colorPriority: {a: 1, b: 1, c: 1, d: 1}, shapeCluster: 5, distancePenalty: 1})}
+                  className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                >
+                  Edge Focus
+                </button>
+                <button 
+                  onClick={() => setCustomWeights({edgeMatching: 5, mirrorBonus: 300, rotationBonus: 50, colorPriority: {a: 1, b: 1, c: 1, d: 1}, shapeCluster: 10, distancePenalty: 2})}
+                  className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"
+                >
+                  Mirror Focus
+                </button>
+                <button 
+                  onClick={() => setCustomWeights({edgeMatching: 10, mirrorBonus: 20, rotationBonus: 10, colorPriority: {a: 1, b: 1, c: 1, d: 1}, shapeCluster: 100, distancePenalty: 5})}
+                  className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                >
+                  Shape Focus
+                </button>
+                <button 
+                  onClick={() => setCustomWeights({edgeMatching: 10, mirrorBonus: 100, rotationBonus: 50, colorPriority: {a: 1, b: 1, c: 1, d: 1}, shapeCluster: 20, distancePenalty: 1})}
+                  className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"
+                >
+                  Reset Default
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Optimization Results Display */}
+          {optimizationResult && (
+            <div className="mt-3 p-3 bg-gray-800 rounded text-sm text-gray-300">
+              <div className="flex flex-wrap gap-4">
+                <span>⚡ {optimizationResult.swaps} swaps</span>
+                <span>🕒 {optimizationResult.executionTime.toFixed(1)}ms</span>
+                <span>🔄 {optimizationResult.iterations} iterations</span>
+                <span>📊 Score: {optimizationResult.finalScore}</span>
+                {optimizationResult.converged && <span>✅ Converged</span>}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* CSV Export/Import Buttons */}

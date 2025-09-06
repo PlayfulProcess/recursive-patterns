@@ -13,6 +13,28 @@ export {
   calculateEdgeMatchScore, 
   findEdgeMatches 
 } from './edgeMatching';
+export {
+  optimizeGridConfigurable,
+  optimizeWithPreset,
+  optimizeForSingleColor
+} from './optimizationEngine';
+export type {
+  OptimizationConfig,
+  OptimizationResult,  
+  OptimizationWeights,
+  TraversalPattern
+} from './optimizationConfig';
+export {
+  OPTIMIZATION_PRESETS
+} from './optimizationConfig';
+export type {
+  ScoringFunction
+} from './optimizationConfig';
+export {
+  DEFAULT_SCORING_FUNCTIONS,
+  createColorSpecificMatching,
+  SCORING_PRESETS
+} from './scoringFunctions';
 export { 
   buildTileRelationships, 
   findMirrorTile, 
@@ -44,6 +66,11 @@ export const functionRegistry = {
   // Grid operations
   fillGrid: 'fillGrid',
   optimizeEdgeMatching: 'optimizeEdgeMatching',
+  
+  // NEW: Configurable optimization functions
+  optimizeGridConfigurable: 'optimizeGridConfigurable',
+  optimizeWithPreset: 'optimizeWithPreset',
+  optimizeForSingleColor: 'optimizeForSingleColor',
   
   // Analysis functions
   calculatePatternScore: 'calculatePatternScore',
@@ -108,11 +135,32 @@ import {
   getImprovementSuggestions,
   analyzeMirrorPairsFromCSV
 } from './csvAnalysis';
+import {
+  optimizeGridConfigurable,
+  optimizeWithPreset,
+  optimizeForSingleColor
+} from './optimizationEngine';
+import {
+  OptimizationConfig,
+  OptimizationResult,
+  OptimizationWeights,
+  TraversalPattern,
+  OPTIMIZATION_PRESETS
+} from './optimizationConfig';
+import {
+  ScoringFunction,
+  DEFAULT_SCORING_FUNCTIONS,
+  createColorSpecificMatching,
+  SCORING_PRESETS
+} from './scoringFunctions';
 
 // Function map for dynamic access (AI can use this)
 export const functionMap = {
   fillGrid,
   optimizeEdgeMatching,
+  optimizeGridConfigurable,
+  optimizeWithPreset,
+  optimizeForSingleColor,
   calculatePatternScore,
   calculateEdgeMatchScore,
   findAllMirrorPairs,
