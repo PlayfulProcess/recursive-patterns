@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import TileFamily from '@/components/TileFamily';
 import CSVTable, { TileData } from '@/components/CSVTable';
 import ColorPalette, { ColorScheme } from '@/components/ColorPalette';
-import MiniPlayground from '@/components/MiniPlayground';
 import MainGridEnhanced from '@/components/MainGridEnhanced';
 import AIPatternChatPopup from '@/components/AIPatternChatPopup';
 import { TileProvider, useTiles } from '@/contexts/TileContext';
@@ -157,13 +156,6 @@ function HomeContent() {
           onGridUpdate={setMainGrid}
           gridWidth={12}
           gridHeight={8}
-        />
-
-
-        {/* Mini Playground */}
-        <MiniPlayground 
-          allTiles={tiles}
-          customColors={customColors}
         />
       </div>
     </div>
