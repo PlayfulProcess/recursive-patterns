@@ -126,9 +126,26 @@ function HomeContent() {
   }
 
   return (
-    <div className="min-h-screen p-8 bg-gray-900">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-center mb-8 text-white">Recursive Pattern Tiles</h1>
+    <div className="min-h-screen bg-gray-900">
+      {/* Header with back to home link */}
+      <header className="bg-gray-800 border-b border-gray-700 px-8 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <a 
+            href="https://www.recursive.eco/" 
+            className="text-gray-400 hover:text-white transition-colors flex items-center gap-2"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span className="text-xl">←</span>
+            <span className="font-medium">Back to Recursive.eco</span>
+          </a>
+          <h1 className="text-2xl font-bold text-white">Pattern Tile Explorer</h1>
+        </div>
+      </header>
+      
+      <div className="p-8">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold text-center mb-8 text-white">Recursive Pattern Tiles</h1>
         
         {/* Color Palette */}
         <ColorPalette 
@@ -186,6 +203,7 @@ function HomeContent() {
           gridWidth={12}
           gridHeight={8}
         />
+        </div>
       </div>
     </div>
   );
