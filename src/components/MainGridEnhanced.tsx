@@ -34,9 +34,67 @@ interface MainGridEnhancedProps {
     tiles: TileData[];
     shouldHighlight: boolean;
   };
+  onRenderInMiniPlayground?: (tile: TileData, x: number, y: number) => void;
 }
 
-export default function MainGridEnhanced({ allTiles, customColors, grid: externalGrid, onGridUpdate, selectedTileFromTable, filteredTiles }: MainGridEnhancedProps) {
+// Context Menu Component
+interface ContextMenuProps {
+  x: number;
+  y: number;
+  tile: TileData;
+  gridX: number;
+  gridY: number;
+  onRenderInMiniPlayground?: (tile: TileData, x: number, y: number) => void;
+  onClose: () => void;
+}
+
+const ContextMenu: React.FC<ContextMenuProps> = ({ 
+  x, 
+  y, 
+  tile, 
+  gridX, 
+  gridY, 
+  onRenderInMiniPlayground, 
+  onClose 
+}) => {
+  useEffect(() => {
+    const handleClickOutside = () => onClose();
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [onClose]);
+
+  return (
+    <div 
+      className="fixed bg-gray-800 border border-gray-600 rounded-lg shadow-lg py-2 z-50"
+      style={{ left: x, top: y }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="px-4 py-2 text-gray-300 text-sm border-b border-gray-600">
+        Tile: {tile.id} at {String.fromCharCode(65 + gridX)}{gridY + 1}
+      </div>
+      {onRenderInMiniPlayground && (
+        <button
+          onClick={() => {
+            onRenderInMiniPlayground(tile, gridX, gridY);
+            onClose();
+          }}
+          className="w-full px-4 py-2 text-left text-white hover:bg-gray-700 text-sm flex items-center gap-2"
+        >
+          <span>🎨</span>
+          Render in Mini Playground
+        </button>
+      )}
+      <button
+        onClick={onClose}
+        className="w-full px-4 py-2 text-left text-gray-400 hover:bg-gray-700 text-sm"
+      >
+        Cancel
+      </button>
+    </div>
+  );
+};
+
+export default function MainGridEnhanced({ allTiles, customColors, grid: externalGrid, onGridUpdate, selectedTileFromTable, filteredTiles, onRenderInMiniPlayground }: MainGridEnhancedProps) {
   const [internalGrid, setInternalGrid] = useState<GridCell[]>(() => {
     const cells: GridCell[] = [];
     for (let y = 0; y < 8; y++) {
@@ -78,6 +136,13 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
   const gridRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [patternAnalysis, setPatternAnalysis] = useState<string>('');
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    tile: TileData;
+    gridX: number;
+    gridY: number;
+  } | null>(null);
 
   // Sync external grid changes to internal state
   useEffect(() => {
@@ -255,6 +320,9 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
   const handleCellClick = (cell: GridCell, shiftKey: boolean, ctrlKey: boolean) => {
     const cellKey = getCellKey(cell);
     
+    // Close context menu if open
+    setContextMenu(null);
+    
     // Clear highlights when selecting new cells (unless holding modifiers for multi-select)
     if (!ctrlKey) {
       clearHighlights();
@@ -283,6 +351,21 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
     
     if (!cell.tile && !shiftKey && !ctrlKey) {
       setShowTileSelector(true);
+    }
+  };
+
+  const handleCellRightClick = (e: React.MouseEvent, cell: GridCell) => {
+    e.preventDefault();
+    
+    // Only show context menu if cell has a tile
+    if (cell.tile) {
+      setContextMenu({
+        x: e.clientX,
+        y: e.clientY,
+        tile: cell.tile,
+        gridX: cell.x,
+        gridY: cell.y
+      });
     }
   };
 
@@ -1304,6 +1387,7 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
                 <div
                   key={cellKey}
                   onClick={(e) => handleCellClick(cell, e.shiftKey, e.ctrlKey || e.metaKey)}
+                  onContextMenu={(e) => handleCellRightClick(e, cell)}
                   onDragStart={(e) => handleDragStart(e, cell)}
                   onDragEnd={handleDragEnd}
                   onDragOver={(e) => handleDragOver(e, cell)}
@@ -1432,6 +1516,19 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
         onChange={handleFileSelect}
         style={{ display: 'none' }}
       />
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          tile={contextMenu.tile}
+          gridX={contextMenu.gridX}
+          gridY={contextMenu.gridY}
+          onRenderInMiniPlayground={onRenderInMiniPlayground}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
 
       {/* Tile Selector Modal */}
       {showTileSelector && (

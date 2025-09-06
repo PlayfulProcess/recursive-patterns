@@ -5,6 +5,7 @@ import TileFamily from '@/components/TileFamily';
 import CSVTable, { TileData } from '@/components/CSVTable';
 import ColorPalette, { ColorScheme } from '@/components/ColorPalette';
 import MainGridEnhanced from '@/components/MainGridEnhanced';
+import MiniPlayground from '@/components/MiniPlayground';
 import AIPatternChatPopup from '@/components/AIPatternChatPopup';
 import { TileProvider, useTiles } from '@/contexts/TileContext';
 
@@ -42,6 +43,17 @@ function HomeContent() {
     shouldHighlight: boolean;
   }>({ tiles: [], shouldHighlight: false });
 
+  // State for Mini Playground grid
+  const [miniGrid, setMiniGrid] = useState<GridCell[]>(() => {
+    const cells: GridCell[] = [];
+    for (let y = 0; y < 8; y++) {
+      for (let x = 0; x < 12; x++) {
+        cells.push({ x, y });
+      }
+    }
+    return cells;
+  });
+
   useEffect(() => {
     if (tiles.length > 0 && !selectedTile) {
       setSelectedTile(tiles[0]);
@@ -55,6 +67,15 @@ function HomeContent() {
 
   const handleFilteredTilesChange = useCallback((tiles: TileData[], shouldHighlight: boolean) => {
     setFilteredTiles({ tiles, shouldHighlight });
+  }, []);
+
+  const handleRenderInMiniPlayground = useCallback((tile: TileData, x: number, y: number) => {
+    setMiniGrid(prevGrid => {
+      const newGrid = [...prevGrid];
+      const index = y * 12 + x; // Convert x,y to grid index
+      newGrid[index] = { x, y, tile, rotation: 0 };
+      return newGrid;
+    });
   }, []);
 
   const handleColorChange = (edge: 'a' | 'b' | 'c' | 'd', color: string) => {
@@ -147,6 +168,14 @@ function HomeContent() {
           onGridUpdate={setMainGrid}
           selectedTileFromTable={selectedTile}
           filteredTiles={filteredTiles}
+          onRenderInMiniPlayground={handleRenderInMiniPlayground}
+        />
+
+        {/* Mini Playground */}
+        <MiniPlayground 
+          customColors={customColors}
+          miniGrid={miniGrid}
+          onMiniGridUpdate={setMiniGrid}
         />
 
         {/* AI Pattern Chat Popup */}
