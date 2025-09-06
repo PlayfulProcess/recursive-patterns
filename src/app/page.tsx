@@ -141,6 +141,22 @@ function HomeContent() {
           </a>
           <h1 className="text-2xl font-bold text-white">Pattern Tile Explorer</h1>
         </div>
+        {/* Attribution */}
+        <div className="bg-gray-700 px-8 py-3">
+          <div className="max-w-7xl mx-auto text-center">
+            <p className="text-gray-300 text-sm italic">
+              Inspired by the artistic work of{' '}
+              <a 
+                href="https://fernandocarnauba.com/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-400 hover:text-blue-300 underline transition-colors"
+              >
+                Fernando Carnauba
+              </a>
+            </p>
+          </div>
+        </div>
       </header>
       
       <div className="p-8">
