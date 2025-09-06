@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import TileFamily from '@/components/TileFamily';
 import CSVTable, { TileData } from '@/components/CSVTable';
 import ColorPalette, { ColorScheme } from '@/components/ColorPalette';
@@ -54,9 +54,9 @@ function HomeContent() {
     // The highlighting will be handled by MainGridEnhanced component via the selectedTileFromTable prop
   };
 
-  const handleFilteredTilesChange = (tiles: TileData[], shouldHighlight: boolean) => {
+  const handleFilteredTilesChange = useCallback((tiles: TileData[], shouldHighlight: boolean) => {
     setFilteredTiles({ tiles, shouldHighlight });
-  };
+  }, []);
 
   const handleColorChange = (edge: 'a' | 'b' | 'c' | 'd', color: string) => {
     setCustomColors(prev => ({
