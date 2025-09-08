@@ -79,24 +79,48 @@
         h2 {
             color: #4CAF50;
         }
-        .block-color-0 { background: #8B4513 !important; }
-        .block-color-1 { background: #2E7D32 !important; }
-        .block-color-2 { background: #1565C0 !important; }
-        .block-color-3 { background: #6A1B9A !important; }
-        .block-color-4 { background: #D84315 !important; }
-        .block-color-5 { background: #F57C00 !important; }
+        .block-color-0 { background: #FF6B6B !important; }
+        .block-color-1 { background: #4ECDC4 !important; }
+        .block-color-2 { background: #45B7D1 !important; }
+        .block-color-3 { background: #FFA07A !important; }
+        .block-color-4 { background: #98D8C8 !important; }
+        .block-color-5 { background: #F7DC6F !important; }
+        .block-color-6 { background: #BB8FCE !important; }
+        .block-color-7 { background: #85C1E9 !important; }
+        .block-color-8 { background: #F8C471 !important; }
+        .block-color-9 { background: #82E0AA !important; }
+        .block-color-10 { background: #F1948A !important; }
+        .block-color-11 { background: #AED6F1 !important; }
+        
+        /* Quadrant colors */
+        .quadrant-NW { background: #FF6B6B !important; }
+        .quadrant-NE { background: #4ECDC4 !important; }
+        .quadrant-SW { background: #45B7D1 !important; }
+        .quadrant-SE { background: #FFA07A !important; }
+        
+        /* Row/Column colors */
+        .row-major { background: linear-gradient(90deg, #FF6B6B, #4ECDC4) !important; }
+        .column-major { background: linear-gradient(0deg, #45B7D1, #FFA07A) !important; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>2x2 Block Traversal Pattern Test</h1>
+        <h1>Grid Pattern Visualization Test</h1>
         
         <div class="controls">
+            <h3>Algorithmic Patterns:</h3>
             <button onclick="testTraversal('row-major')">Row-Major (Standard)</button>
             <button onclick="testTraversal('block-2x2')">Block 2x2</button>
             <button onclick="testTraversal('column-major')">Column-Major</button>
             <button onclick="testTraversal('spiral-clockwise')">Spiral Clockwise</button>
             <button onclick="testTraversal('checkerboard')">Checkerboard</button>
+            
+            <h3>Hardcoded Patterns from CSV:</h3>
+            <button onclick="loadHardcodedPattern('pattern2x2')">Hardcoded 2x2 Blocks</button>
+            <button onclick="loadHardcodedPattern('patternRowMajor')">Hardcoded Row-Major</button>
+            <button onclick="loadHardcodedPattern('patternColumnMajor')">Hardcoded Column-Major</button>
+            <button onclick="loadHardcodedPattern('patternQuadrants')">Four Quadrants</button>
+            
             <button onclick="reset()">Reset</button>
             <button onclick="toggleSpeed()">Speed: <span id="speed">Normal</span></button>
         </div>
@@ -106,17 +130,7 @@
             <div class="sequence-display" id="sequence">Click a pattern to see traversal order</div>
         </div>
 
-        <div style="display: flex; flex-wrap: wrap;">
-            <div class="grid-container">
-                <h2>6x4 Grid</h2>
-                <div id="grid-6x4" class="grid" style="grid-template-columns: repeat(6, 1fr);"></div>
-            </div>
-            
-            <div class="grid-container">
-                <h2>8x8 Grid</h2>
-                <div id="grid-8x8" class="grid" style="grid-template-columns: repeat(8, 1fr);"></div>
-            </div>
-
+        <div style="display: flex; justify-content: center;">
             <div class="grid-container">
                 <h2>12x8 Grid (Actual App Size)</h2>
                 <div id="grid-12x8" class="grid" style="grid-template-columns: repeat(12, 1fr);"></div>
@@ -131,8 +145,6 @@
 
         // Initialize grids
         function initGrids() {
-            createGrid('grid-6x4', 6, 4);
-            createGrid('grid-8x8', 8, 8);
             createGrid('grid-12x8', 12, 8);
         }
 
@@ -240,42 +252,35 @@
             
             document.getElementById('pattern-name').textContent = pattern;
             
-            const grids = [
-                { id: 'grid-6x4', cols: 6, rows: 4 },
-                { id: 'grid-8x8', cols: 8, rows: 8 },
-                { id: 'grid-12x8', cols: 12, rows: 8 }
-            ];
+            const gridInfo = { id: 'grid-12x8', cols: 12, rows: 8 };
+            const sequence = [];
+            const blockMap = new Map();
             
-            for (const gridInfo of grids) {
-                const sequence = [];
-                const blockMap = new Map();
-                
-                for (const item of generateTraversal(pattern, gridInfo.cols, gridInfo.rows)) {
-                    if (pattern === 'block-2x2') {
-                        sequence.push(item.index);
-                        if (!blockMap.has(item.blockId)) {
-                            blockMap.set(item.blockId, []);
-                        }
-                        blockMap.get(item.blockId).push(item.index);
-                    } else {
-                        sequence.push(item);
+            for (const item of generateTraversal(pattern, gridInfo.cols, gridInfo.rows)) {
+                if (pattern === 'block-2x2') {
+                    sequence.push(item.index);
+                    if (!blockMap.has(item.blockId)) {
+                        blockMap.set(item.blockId, []);
                     }
+                    blockMap.get(item.blockId).push(item.index);
+                } else {
+                    sequence.push(item);
                 }
-                
-                // Animate the traversal
-                animateSequence(gridInfo.id, sequence, blockMap, pattern);
             }
             
-            // Show sequence for the first grid
+            // Animate the traversal
+            animateSequence(gridInfo.id, sequence, blockMap, pattern);
+            
+            // Show sequence for the grid
             const seq = [];
-            for (const item of generateTraversal(pattern, 6, 4)) {
+            for (const item of generateTraversal(pattern, 12, 8)) {
                 if (pattern === 'block-2x2') {
                     seq.push(item.index);
                 } else {
                     seq.push(item);
                 }
             }
-            document.getElementById('sequence').textContent = `Order: [${seq.join(', ')}]`;
+            document.getElementById('sequence').textContent = `Order: [${seq.slice(0, 20).join(', ')}${seq.length > 20 ? '...' : ''}]`;
         }
 
         async function animateSequence(gridId, sequence, blockMap, pattern) {
@@ -328,8 +333,137 @@
             document.getElementById('speed').textContent = speeds[animationSpeed];
         }
 
+        // CSV data for hardcoded patterns
+        let csvData = null;
+        
+        // Load CSV data
+        async function loadCSV() {
+            try {
+                const response = await fetch('public/hardcoded-grid-patterns.csv');
+                const text = await response.text();
+                const lines = text.trim().split('\n');
+                const headers = lines[0].split(',').map(h => h.trim());
+                
+                csvData = lines.slice(1).map(line => {
+                    const values = line.split(',').map(v => v.trim());
+                    const obj = {};
+                    headers.forEach((header, index) => {
+                        obj[header] = values[index];
+                    });
+                    return obj;
+                });
+                
+                console.log('CSV loaded:', csvData.length, 'rows');
+                console.log('Headers:', headers);
+                console.log('Raw first line:', lines[1]);
+                console.log('Parsed first row:', csvData[0]);
+                console.log('Available keys:', Object.keys(csvData[0]));
+                console.log('Sample quadrant values:', csvData.slice(0, 10).map(r => r.patternQuadrants));
+            } catch (error) {
+                console.error('Failed to load CSV:', error);
+                csvData = null;
+            }
+        }
+        
+        // Load hardcoded pattern from CSV
+        async function loadHardcodedPattern(patternType) {
+            if (!csvData) {
+                await loadCSV();
+            }
+            
+            if (!csvData) {
+                alert('Could not load hardcoded patterns CSV file');
+                return;
+            }
+            
+            reset();
+            document.getElementById('pattern-name').textContent = `Hardcoded ${patternType}`;
+            
+            const gridInfo = { id: 'grid-12x8', cols: 12, rows: 8 };
+            
+            // Color the grid based on the pattern
+            colorGridFromCSV(gridInfo, patternType);
+            
+            // Show pattern info
+            const patternMap = getPatternMapping(patternType);
+            const uniqueSections = [...new Set(Object.values(patternMap))];
+            console.log('Pattern map:', patternMap);
+            console.log('Unique sections:', uniqueSections);
+            document.getElementById('sequence').textContent = 
+                `Pattern sections: ${uniqueSections.join(', ')} (${uniqueSections.length} unique sections)`;
+        }
+        
+        // Color grid cells based on CSV pattern
+        function colorGridFromCSV(gridInfo, patternType) {
+            const { id, cols, rows } = gridInfo;
+            
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    const cellIndex = row * cols + col;
+                    const cell = document.getElementById(`${id}-cell-${cellIndex}`);
+                    
+                    if (cell && row < 8 && col < 12) { // Only if within CSV bounds
+                        const csvRow = csvData.find(r => 
+                            parseInt(r.row) === row + 1 && parseInt(r.col) === col + 1
+                        );
+                        
+                        if (csvRow) {
+                            const sectionValue = csvRow[patternType];
+                            applySectionColor(cell, sectionValue, patternType);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Apply color based on section value and pattern type
+        function applySectionColor(cell, sectionValue, patternType) {
+            // Clear existing classes
+            cell.className = 'cell';
+            
+            console.log(`Applying ${patternType}: ${sectionValue} to cell ${cell.id}`);
+            
+            if (patternType === 'pattern2x2') {
+                // 2x2 blocks: Block1, Block2, etc. - each block should have same color
+                const blockNum = parseInt(sectionValue.replace('Block', '')) || 1;
+                const colorIndex = (blockNum - 1) % 12; // Use 12 colors instead of 6
+                cell.classList.add(`block-color-${colorIndex}`);
+                console.log(`Block ${blockNum} -> color ${colorIndex}`);
+            } else if (patternType === 'patternQuadrants') {
+                // Four quadrants: NW, NE, SW, SE
+                const className = `quadrant-${sectionValue}`;
+                cell.classList.add(className);
+                console.log(`Added class: ${className}`);
+            } else if (patternType === 'patternRowMajor') {
+                // Row major: Row1, Row2, etc. - each row should have same color
+                const rowNum = parseInt(sectionValue.replace('Row', '')) || 1;
+                const colorIndex = (rowNum - 1) % 12;
+                cell.classList.add(`block-color-${colorIndex}`);
+            } else if (patternType === 'patternColumnMajor') {
+                // Column major: Col1, Col2, etc. - each column should have same color
+                const colNum = parseInt(sectionValue.replace('Col', '')) || 1;
+                const colorIndex = (colNum - 1) % 12;
+                cell.classList.add(`block-color-${colorIndex}`);
+            }
+        }
+        
+        // Get pattern mapping for display
+        function getPatternMapping(patternType) {
+            const mapping = {};
+            csvData.forEach((row, index) => {
+                const key = `${row.col}-${row.row}`;
+                const value = row[patternType];
+                mapping[key] = value;
+                if (index < 5) { // Debug first 5 rows
+                    console.log(`Row ${index}: col=${row.col}, row=${row.row}, ${patternType}=${value}`);
+                }
+            });
+            return mapping;
+        }
+        
         // Initialize on load
         initGrids();
+        loadCSV(); // Pre-load CSV data
     </script>
 </body>
 </html>
