@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2x2 Block Traversal Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .grid-container {
+            display: inline-block;
+            margin: 20px;
+            vertical-align: top;
+        }
+        .grid {
+            display: grid;
+            gap: 2px;
+            background: #333;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .cell {
+            width: 40px;
+            height: 40px;
+            background: #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        .cell.active {
+            background: #4CAF50;
+            transform: scale(1.1);
+        }
+        .cell.block-highlight {
+            border-color: #FFD700;
+            background: #666;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #1976D2;
+        }
+        .info {
+            margin: 20px 0;
+            padding: 15px;
+            background: #333;
+            border-radius: 8px;
+        }
+        .sequence-display {
+            font-family: monospace;
+            background: #222;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        h2 {
+            color: #4CAF50;
+        }
+        .block-color-0 { background: #FF6B6B !important; }
+        .block-color-1 { background: #4ECDC4 !important; }
+        .block-color-2 { background: #45B7D1 !important; }
+        .block-color-3 { background: #FFA07A !important; }
+        .block-color-4 { background: #98D8C8 !important; }
+        .block-color-5 { background: #F7DC6F !important; }
+        .block-color-6 { background: #BB8FCE !important; }
+        .block-color-7 { background: #85C1E9 !important; }
+        .block-color-8 { background: #F8C471 !important; }
+        .block-color-9 { background: #82E0AA !important; }
+        .block-color-10 { background: #F1948A !important; }
+        .block-color-11 { background: #AED6F1 !important; }
+        
+        /* Quadrant colors */
+        .quadrant-NW { background: #FF6B6B !important; }
+        .quadrant-NE { background: #4ECDC4 !important; }
+        .quadrant-SW { background: #45B7D1 !important; }
+        .quadrant-SE { background: #FFA07A !important; }
+        
+        /* Row/Column colors */
+        .row-major { background: linear-gradient(90deg, #FF6B6B, #4ECDC4) !important; }
+        .column-major { background: linear-gradient(0deg, #45B7D1, #FFA07A) !important; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Grid Pattern Visualization Test</h1>
+        
+        <div class="controls">
+            <h3>Algorithmic Patterns:</h3>
+            <button onclick="testTraversal('row-major')">Row-Major (Standard)</button>
+            <button onclick="testTraversal('block-2x2')">Block 2x2</button>
+            <button onclick="testTraversal('column-major')">Column-Major</button>
+            <button onclick="testTraversal('spiral-clockwise')">Spiral Clockwise</button>
+            <button onclick="testTraversal('checkerboard')">Checkerboard</button>
+            
+            <h3>Hardcoded Patterns from CSV:</h3>
+            <button onclick="loadHardcodedPattern('pattern2x2')">Hardcoded 2x2 Blocks</button>
+            <button onclick="loadHardcodedPattern('patternRowMajor')">Hardcoded Row-Major</button>
+            <button onclick="loadHardcodedPattern('patternColumnMajor')">Hardcoded Column-Major</button>
+            <button onclick="loadHardcodedPattern('patternQuadrants')">Four Quadrants</button>
+            
+            <button onclick="reset()">Reset</button>
+            <button onclick="toggleSpeed()">Speed: <span id="speed">Normal</span></button>
+        </div>
+
+        <div class="info">
+            <h3>Current Pattern: <span id="pattern-name">None</span></h3>
+            <div class="sequence-display" id="sequence">Click a pattern to see traversal order</div>
+        </div>
+
+        <div style="display: flex; justify-content: center;">
+            <div class="grid-container">
+                <h2>12x8 Grid (Actual App Size)</h2>
+                <div id="grid-12x8" class="grid" style="grid-template-columns: repeat(12, 1fr);"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let animationSpeed = 100;
+        let currentAnimation = null;
+
+        // Initialize grids
+        function initGrids() {
+            createGrid('grid-12x8', 12, 8);
+        }
+
+        function createGrid(id, cols, rows) {
+            const grid = document.getElementById(id);
+            grid.innerHTML = '';
+            for (let i = 0; i < rows * cols; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.textContent = i;
+                cell.id = `${id}-cell-${i}`;
+                grid.appendChild(cell);
+            }
+        }
+
+        // Traversal pattern generators
+        function* generateTraversal(pattern, columns, rows) {
+            switch (pattern) {
+                case 'row-major':
+                    for (let row = 0; row < rows; row++) {
+                        for (let col = 0; col < columns; col++) {
+                            yield row * columns + col;
+                        }
+                    }
+                    break;
+                    
+                case 'column-major':
+                    for (let col = 0; col < columns; col++) {
+                        for (let row = 0; row < rows; row++) {
+                            yield row * columns + col;
+                        }
+                    }
+                    break;
+                    
+                case 'block-2x2':
+                    // This is the key pattern we're testing!
+                    for (let blockRow = 0; blockRow < rows; blockRow += 2) {
+                        for (let blockCol = 0; blockCol < columns; blockCol += 2) {
+                            // Process each 2x2 block
+                            for (let r = blockRow; r < Math.min(blockRow + 2, rows); r++) {
+                                for (let c = blockCol; c < Math.min(blockCol + 2, columns); c++) {
+                                    yield { 
+                                        index: r * columns + c,
+                                        blockId: Math.floor(blockRow/2) * Math.ceil(columns/2) + Math.floor(blockCol/2)
+                                    };
+                                }
+                            }
+                        }
+                    }
+                    break;
+                    
+                case 'spiral-clockwise':
+                    let top = 0, bottom = rows - 1, left = 0, right = columns - 1;
+                    while (top <= bottom && left <= right) {
+                        for (let col = left; col <= right; col++) {
+                            yield top * columns + col;
+                        }
+                        top++;
+                        for (let row = top; row <= bottom; row++) {
+                            yield row * columns + right;
+                        }
+                        right--;
+                        if (top <= bottom) {
+                            for (let col = right; col >= left; col--) {
+                                yield bottom * columns + col;
+                            }
+                            bottom--;
+                        }
+                        if (left <= right) {
+                            for (let row = bottom; row >= top; row--) {
+                                yield row * columns + left;
+                            }
+                            left++;
+                        }
+                    }
+                    break;
+                    
+                case 'checkerboard':
+                    for (let pass = 0; pass < 2; pass++) {
+                        for (let row = 0; row < rows; row++) {
+                            for (let col = 0; col < columns; col++) {
+                                if ((row + col) % 2 === pass) {
+                                    yield row * columns + col;
+                                }
+                            }
+                        }
+                    }
+                    break;
+                    
+                default:
+                    for (let i = 0; i < rows * columns; i++) {
+                        yield i;
+                    }
+            }
+        }
+
+        async function testTraversal(pattern) {
+            // Clear any existing animation
+            if (currentAnimation) {
+                clearTimeout(currentAnimation);
+                currentAnimation = null;
+            }
+            
+            reset();
+            
+            document.getElementById('pattern-name').textContent = pattern;
+            
+            const gridInfo = { id: 'grid-12x8', cols: 12, rows: 8 };
+            const sequence = [];
+            const blockMap = new Map();
+            
+            for (const item of generateTraversal(pattern, gridInfo.cols, gridInfo.rows)) {
+                if (pattern === 'block-2x2') {
+                    sequence.push(item.index);
+                    if (!blockMap.has(item.blockId)) {
+                        blockMap.set(item.blockId, []);
+                    }
+                    blockMap.get(item.blockId).push(item.index);
+                } else {
+                    sequence.push(item);
+                }
+            }
+            
+            // Animate the traversal
+            animateSequence(gridInfo.id, sequence, blockMap, pattern);
+            
+            // Show sequence for the grid
+            const seq = [];
+            for (const item of generateTraversal(pattern, 12, 8)) {
+                if (pattern === 'block-2x2') {
+                    seq.push(item.index);
+                } else {
+                    seq.push(item);
+                }
+            }
+            document.getElementById('sequence').textContent = `Order: [${seq.slice(0, 20).join(', ')}${seq.length > 20 ? '...' : ''}]`;
+        }
+
+        async function animateSequence(gridId, sequence, blockMap, pattern) {
+            let delay = 0;
+            
+            if (pattern === 'block-2x2') {
+                // First, highlight blocks with different colors
+                let blockId = 0;
+                for (const [bid, cells] of blockMap) {
+                    cells.forEach(cellIndex => {
+                        const cell = document.getElementById(`${gridId}-cell-${cellIndex}`);
+                        if (cell) {
+                            cell.classList.add(`block-color-${blockId % 6}`);
+                        }
+                    });
+                    blockId++;
+                }
+            }
+            
+            // Then animate the traversal
+            sequence.forEach((index, step) => {
+                currentAnimation = setTimeout(() => {
+                    const cell = document.getElementById(`${gridId}-cell-${index}`);
+                    if (cell) {
+                        cell.classList.add('active');
+                        cell.textContent = step;
+                    }
+                }, delay);
+                delay += animationSpeed;
+            });
+        }
+
+        function reset() {
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.classList.remove('active');
+                cell.className = 'cell';
+                const index = cell.id.split('-').pop();
+                cell.textContent = index;
+            });
+            document.getElementById('pattern-name').textContent = 'None';
+            document.getElementById('sequence').textContent = 'Click a pattern to see traversal order';
+        }
+
+        function toggleSpeed() {
+            const speeds = { 50: 'Fast', 100: 'Normal', 200: 'Slow', 500: 'Very Slow' };
+            const speedKeys = Object.keys(speeds).map(Number);
+            const currentIndex = speedKeys.indexOf(animationSpeed);
+            const nextIndex = (currentIndex + 1) % speedKeys.length;
+            animationSpeed = speedKeys[nextIndex];
+            document.getElementById('speed').textContent = speeds[animationSpeed];
+        }
+
+        // CSV data for hardcoded patterns
+        let csvData = null;
+        
+        // Load CSV data
+        async function loadCSV() {
+            try {
+                const response = await fetch('public/hardcoded-grid-patterns.csv');
+                const text = await response.text();
+                const lines = text.trim().split('\n');
+                const headers = lines[0].split(',').map(h => h.trim());
+                
+                csvData = lines.slice(1).map(line => {
+                    const values = line.split(',').map(v => v.trim());
+                    const obj = {};
+                    headers.forEach((header, index) => {
+                        obj[header] = values[index];
+                    });
+                    return obj;
+                });
+                
+                console.log('CSV loaded:', csvData.length, 'rows');
+            } catch (error) {
+                console.error('Failed to load CSV:', error);
+                csvData = null;
+            }
+        }
+        
+        // Load hardcoded pattern from CSV
+        async function loadHardcodedPattern(patternType) {
+            if (!csvData) {
+                await loadCSV();
+            }
+            
+            if (!csvData) {
+                alert('Could not load hardcoded patterns CSV file');
+                return;
+            }
+            
+            reset();
+            document.getElementById('pattern-name').textContent = `Hardcoded ${patternType}`;
+            
+            const gridInfo = { id: 'grid-12x8', cols: 12, rows: 8 };
+            
+            // Color the grid based on the pattern
+            colorGridFromCSV(gridInfo, patternType);
+            
+            // Show pattern info
+            const patternMap = getPatternMapping(patternType);
+            const uniqueSections = [...new Set(Object.values(patternMap))];
+            document.getElementById('sequence').textContent = 
+                `Pattern sections: ${uniqueSections.join(', ')} (${uniqueSections.length} unique sections)`;
+        }
+        
+        // Color grid cells based on CSV pattern
+        function colorGridFromCSV(gridInfo, patternType) {
+            const { id, cols, rows } = gridInfo;
+            
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    const cellIndex = row * cols + col;
+                    const cell = document.getElementById(`${id}-cell-${cellIndex}`);
+                    
+                    if (cell && row < 8 && col < 12) { // Only if within CSV bounds
+                        const csvRow = csvData.find(r => 
+                            parseInt(r.row) === row + 1 && parseInt(r.col) === col + 1
+                        );
+                        
+                        if (csvRow) {
+                            const sectionValue = csvRow[patternType];
+                            applySectionColor(cell, sectionValue, patternType);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Apply color based on section value and pattern type
+        function applySectionColor(cell, sectionValue, patternType) {
+            // Clear existing classes
+            cell.className = 'cell';
+            
+            if (patternType === 'pattern2x2') {
+                // 2x2 blocks: Block1, Block2, etc. - each block should have same color
+                const blockNum = parseInt(sectionValue.replace('Block', '')) || 1;
+                const colorIndex = (blockNum - 1) % 12; // Use 12 colors instead of 6
+                cell.classList.add(`block-color-${colorIndex}`);
+            } else if (patternType === 'patternQuadrants') {
+                // Four quadrants: NW, NE, SW, SE
+                const className = `quadrant-${sectionValue}`;
+                cell.classList.add(className);
+            } else if (patternType === 'patternRowMajor') {
+                // Row major: Row1, Row2, etc. - each row should have same color
+                const rowNum = parseInt(sectionValue.replace('Row', '')) || 1;
+                const colorIndex = (rowNum - 1) % 12;
+                cell.classList.add(`block-color-${colorIndex}`);
+            } else if (patternType === 'patternColumnMajor') {
+                // Column major: Col1, Col2, etc. - each column should have same color
+                const colNum = parseInt(sectionValue.replace('Col', '')) || 1;
+                const colorIndex = (colNum - 1) % 12;
+                cell.classList.add(`block-color-${colorIndex}`);
+            }
+        }
+        
+        // Get pattern mapping for display
+        function getPatternMapping(patternType) {
+            const mapping = {};
+            csvData.forEach((row) => {
+                const key = `${row.col}-${row.row}`;
+                const value = row[patternType];
+                mapping[key] = value;
+            });
+            return mapping;
+        }
+        
+        // Initialize on load
+        initGrids();
+        loadCSV(); // Pre-load CSV data
+    </script>
+</body>
+</html>
