@@ -9,7 +9,7 @@ import MiniPlayground from '@/components/MiniPlayground';
 import AIPatternChatPopup from '@/components/AIPatternChatPopup';
 import { PatternGrid } from '@/components/PatternVisualization';
 import PatternOptimizationShowcase from '@/components/PatternOptimizationShowcase';
-import TraversalPatternDemo from '@/components/TraversalPatternDemo';
+import PositioningVisualization from '@/components/PositioningVisualization';
 import { TileProvider, useTiles } from '@/contexts/TileContext';
 
 interface GridCell {
@@ -214,18 +214,11 @@ function HomeContent() {
           onMiniGridUpdate={setMiniGrid}
         />
 
-        {/* Pattern (Positioning) Visualization Section - Side by Side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Traversal Pattern Demo */}
-          <TraversalPatternDemo className="" />
-
-          {/* Pattern Visualization */}
-          <PatternGrid 
-            gridWidth={12}
-            gridHeight={8}
-            className=""
-          />
-        </div>
+        {/* Positioning Visualization Section */}
+        <PositioningVisualization 
+          allTiles={tiles}
+          customColors={customColors}
+        />
 
         {/* Pattern Optimization Showcase */}
         <PatternOptimizationShowcase 
