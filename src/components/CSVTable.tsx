@@ -15,6 +15,7 @@ export interface TileData {
   rotation90: string; // 90° rotation ID
   rotation180: string; // 180° rotation ID
   rotation270: string; // 270° rotation ID
+  rotation: number; // Rotation value (0, 1, 2, or 3)
 }
 
 interface FilterState {
@@ -160,11 +161,12 @@ const CSVTable: React.FC<CSVTableProps> = ({ data, onRowClick, selectedTile, onF
           <thead className="bg-gray-700 sticky top-0">
             <tr>
               <th className="border border-gray-600 px-2 py-1 text-left text-white">ID</th>
+              <th className="border border-gray-600 px-2 py-1 text-left text-white">Rotation</th>
+              <th className="border border-gray-600 px-2 py-1 text-left text-white">Shape</th>
               <th className="border border-gray-600 px-2 py-1 text-left text-white">0°</th>
               <th className="border border-gray-600 px-2 py-1 text-left text-white">90°</th>
               <th className="border border-gray-600 px-2 py-1 text-left text-white">180°</th>
               <th className="border border-gray-600 px-2 py-1 text-left text-white">270°</th>
-              <th className="border border-gray-600 px-2 py-1 text-left text-white">Shape</th>
               <th className="border border-gray-600 px-2 py-1 text-left text-white">Mirror-H</th>
               <th className="border border-gray-600 px-2 py-1 text-left text-white">Mirror-V</th>
             </tr>
@@ -179,11 +181,12 @@ const CSVTable: React.FC<CSVTableProps> = ({ data, onRowClick, selectedTile, onF
                 } ${index % 2 === 0 ? 'bg-gray-700' : 'bg-gray-800'}`}
               >
                 <td className="border border-gray-600 px-2 py-1 font-mono text-sm text-white">{tile.id}</td>
+                <td className="border border-gray-600 px-2 py-1 text-center text-white">{tile.rotation}</td>
+                <td className="border border-gray-600 px-2 py-1 text-center text-white">{tile.shape}</td>
                 <td className="border border-gray-600 px-2 py-1 text-center text-white font-mono text-xs">{tile.rotation0}</td>
                 <td className="border border-gray-600 px-2 py-1 text-center text-white font-mono text-xs">{tile.rotation90}</td>
                 <td className="border border-gray-600 px-2 py-1 text-center text-white font-mono text-xs">{tile.rotation180}</td>
                 <td className="border border-gray-600 px-2 py-1 text-center text-white font-mono text-xs">{tile.rotation270}</td>
-                <td className="border border-gray-600 px-2 py-1 text-center text-white">{tile.shape}</td>
                 <td className="border border-gray-600 px-2 py-1 text-center text-white font-mono text-xs">{tile.mirrorH}</td>
                 <td className="border border-gray-600 px-2 py-1 text-center text-white font-mono text-xs">{tile.mirrorV}</td>
               </tr>

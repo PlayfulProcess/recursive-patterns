@@ -22,6 +22,7 @@ function getIdx(headers: string[]) {
     rot90: find('rotation90', 'rot90', 'r90', 'code90'),
     rot180: find('rotation180', 'rot180', 'r180', 'code180'),
     rot270: find('rotation270', 'rot270', 'r270', 'code270'),
+    rotation: find('rotation', 'rot', 'rotation_value'), // Add rotation column
     code: find('code', 'edges', 'pattern') // optional 4-letter code fallback
   };
 }
@@ -51,6 +52,7 @@ export function parsePatternsCsv(text: string): TileData[] {
       rotation90: pick(cols, idx.rot90),
       rotation180: pick(cols, idx.rot180),
       rotation270: pick(cols, idx.rot270),
+      rotation: Number(pick(cols, idx.rotation)) || 0,
     };
     return tile;
   });

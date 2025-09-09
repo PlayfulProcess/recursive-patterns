@@ -859,7 +859,7 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
     }
   };
 
-  const selectSameShape = () => {
+  const selectRotationGroup = () => {
     const selectedCell = Array.from(selectedCells).length === 1 
       ? getCellFromKey(Array.from(selectedCells)[0]) 
       : null;
@@ -869,19 +869,29 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
       return;
     }
 
-    // Find all tiles with the same shape
-    const shapeFamily = allTiles.filter(tile => tile.shape === selectedCell.tile?.shape);
-    if (shapeFamily.length > 0) {
-      // Highlight all tiles with same shape in the grid
-      const shapeIds = shapeFamily.map(t => t.id);
-      const shapePositions = findTilePositions(shapeIds);
-      setHighlightedTiles(new Set(shapePositions));
+    // Find all tiles with the same rotation value (0, 1, 2, or 3)
+    const selectedRotation = selectedCell.tile.rotation;
+    console.log('🔷 Selected tile rotation:', selectedRotation, 'Tile:', selectedCell.tile.id);
+    const rotationGroup = allTiles.filter(tile => tile.rotation === selectedRotation);
+    if (rotationGroup.length > 0) {
+      // Highlight all tiles with the same rotation value in the grid
+      const groupIds = rotationGroup.map(t => t.id);
+      const groupPositions = findTilePositions(groupIds);
+      setHighlightedTiles(new Set(groupPositions));
       setHighlightType('shape');
       
-      setTestMessage(`🔷 Found ${shapeFamily.length} tiles with shape ${selectedCell.tile?.shape} (highlighted in purple): ${shapeFamily.map(t => t.id).join(', ')}`);
+      const rotationNames: { [key: string]: string } = {
+        '0': 'Base (0°)',
+        '1': '90° CW',
+        '2': '180°',
+        '3': '270° CW'
+      };
+      const rotationName = rotationNames[String(selectedRotation)] || `Rotation ${selectedRotation}`;
+      
+      setTestMessage(`🔷 Found ${rotationGroup.length} tiles with ${rotationName} rotation (highlighted in purple)`);
     } else {
       clearHighlights();
-      setTestMessage(`❌ No tiles found with shape ${selectedCell.tile?.shape}`);
+      setTestMessage(`❌ No tiles found with the same rotation`);
     }
   };
 
@@ -1745,16 +1755,16 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
                        hover:scale-[1.02] active:scale-[0.98]"
             >
               <span>🔄</span>
-              Rotations
+              Same Shape
             </button>
             <button 
-              onClick={selectSameShape}
+              onClick={selectRotationGroup}
               className="flex items-center gap-2 px-3 py-2 bg-purple-700 text-white rounded
                        hover:bg-purple-600 transition-all duration-200 text-sm
                        hover:scale-[1.02] active:scale-[0.98]"
             >
               <span>🔷</span>
-              Same Shape
+              Same Rotation
             </button>
             <button 
               onClick={() => testFindEdgeMatches('north')}
