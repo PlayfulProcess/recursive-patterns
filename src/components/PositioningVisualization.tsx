@@ -39,6 +39,7 @@ export default function PositioningVisualization({
   const [priorityRules, setPriorityRules] = useState<TilePriorityRule[]>(['vertical-mirrors']);
   const [shapeGroupTarget, setShapeGroupTarget] = useState<string>('same-as-previous');
   const [rotationGroupTarget, setRotationGroupTarget] = useState<string>('same-as-previous');
+  const [rotationSequence, setRotationSequence] = useState<string>('0,1,2,3');
   
   // Pattern replication state
   const [patternTemplate, setPatternTemplate] = useState<TileData[]>([]);
@@ -71,34 +72,61 @@ export default function PositioningVisualization({
     setDuplicateCount(duplicateCount);
   };
 
-  // (Removed duplicate function - now using shared utility from @/lib/traversalPatterns)
+  // Find unused tile with specific rotation, prioritizing new shapes
+  const findBestShape = (targetRotation: number, usedShapes: Set<number>): TileData | null => {
+    const availableTiles = allTiles.filter(tile => 
+      !usedTiles.has(tile.id) && 
+      tile.rotation === targetRotation
+    );
+    
+    // First try: find tile with rotation that has a new shape (not used in current cycle)
+    const newShapeTiles = availableTiles.filter(tile => !usedShapes.has(tile.shape));
+    if (newShapeTiles.length > 0) {
+      console.log(`✅ Found NEW shape tile for rotation ${targetRotation}: ${newShapeTiles[0].id} (shape ${newShapeTiles[0].shape})`);
+      return newShapeTiles[0];
+    }
+    
+    // Fallback: any available tile with target rotation
+    if (availableTiles.length > 0) {
+      console.log(`⚠️ Using ANY shape tile for rotation ${targetRotation}: ${availableTiles[0].id} (shape ${availableTiles[0].shape})`);
+      return availableTiles[0];
+    }
+    
+    console.log(`❌ No tiles available for rotation ${targetRotation}`);
+    return null;
+  };
+
   // Find best tile based on priority rules
   const findBestTile = (position: number, previousTile?: TileData | null): TileData | null => {
-    // Check if we need pattern replication for block-2x2 with shape/rotation rules
-    const needsReplication = selectedPattern === 'block-2x2' && 
-      (priorityRules.includes('shape-group') || priorityRules.includes('rotation-group'));
+    // Debug logging
+    console.log(`🔍 Debug: pattern=${selectedPattern}, rules=${priorityRules}, unique=${uniqueTilesOnly}`);
     
-    if (needsReplication) {
-      const blockSize = 4; // 2x2 = 4 tiles per block
-      const currentBlockIndex = Math.floor(position / blockSize);
-      const positionInBlock = position % blockSize;
+    // Rotation group logic for ALL patterns (not just 2x2)
+    if (priorityRules.includes('rotation-group') && uniqueTilesOnly) {
+      console.log(`🎯 Using rotation-group logic for position ${position}`);
+      const stepNumber = traversalSequence.indexOf(position);
+      if (stepNumber === -1) return null;
       
-      // If we're in the first block, build the template
-      if (currentBlockIndex === 0) {
-        // Let normal logic handle the first block and build template
-      } else if (patternTemplate.length >= blockSize) {
-        // For subsequent blocks, replicate the pattern from the template
-        const templateTile = patternTemplate[positionInBlock];
-        
-        // If uniqueTilesOnly is enabled, don't replicate - find similar tiles instead
-        if (uniqueTilesOnly) {
-          console.log(`🎯 Unique tiles mode: Finding similar tile to ${templateTile?.id} instead of replicating (uniqueTilesOnly=${uniqueTilesOnly})`);
-          // Continue to normal tile selection logic below
-        } else {
-          console.log(`🔄 Replicating pattern: Block ${currentBlockIndex}, Position ${positionInBlock}, Template tile: ${templateTile?.id} (uniqueTilesOnly=${uniqueTilesOnly})`);
-          return templateTile;
+      // Every 4 steps = one rotation cycle, use same rotation sequence
+      const positionInCycle = stepNumber % 4;
+      const rotations = rotationSequence.split(',').map(n => parseInt(n.trim()));
+      const targetRotation = rotations[positionInCycle];
+      
+      // Track shapes used in current 4-tile cycle
+      const cycleStart = Math.floor(stepNumber / 4) * 4;
+      const usedShapesInCycle = new Set<number>();
+      
+      // Check what shapes we've already used in this cycle
+      for (let i = cycleStart; i < stepNumber; i++) {
+        const pos = traversalSequence[i];
+        const existingTile = renderingGrid[pos];
+        if (existingTile) {
+          usedShapesInCycle.add(existingTile.shape);
         }
       }
+      
+      console.log(`🔄 Step ${stepNumber}, Cycle position ${positionInCycle}, Target rotation ${targetRotation}, Used shapes in cycle: ${Array.from(usedShapesInCycle)}`);
+      return findBestShape(targetRotation, usedShapesInCycle);
     }
     let availableTiles = [...allTiles];
     
@@ -489,29 +517,34 @@ export default function PositioningVisualization({
       const previousPosition = step > 0 ? traversalSequence[step - 1] : null;
       const previousTile = previousPosition !== null ? newGrid[previousPosition] : null;
       
-      // Use pattern replication logic
-      const needsReplication = selectedPattern === 'block-2x2' && 
-        (priorityRules.includes('shape-group') || priorityRules.includes('rotation-group'));
-      
-      let bestTile: TileData | null = null;
-      
-      if (needsReplication) {
-        const blockSize = 4;
-        const currentBlockIndex = Math.floor(step / blockSize);
-        const positionInBlock = step % blockSize;
+      // Rotation group logic for pre-generation (ALL patterns)
+      if (priorityRules.includes('rotation-group') && uniqueTilesOnly) {
+        const positionInCycle = step % 4;
+        const rotations = rotationSequence.split(',').map(n => parseInt(n.trim()));
+        const targetRotation = rotations[positionInCycle];
         
-        if (currentBlockIndex === 0) {
-          // Build template from first block
-          bestTile = findBestTileForPreGeneration(position, previousTile, newUsedTiles);
-          if (bestTile && positionInBlock < 4) {
-            newPatternTemplate[positionInBlock] = bestTile;
+        // Track shapes used in current 4-tile cycle
+        const cycleStart = Math.floor(step / 4) * 4;
+        const usedShapesInCycle = new Set<number>();
+        
+        // Check shapes used in this cycle so far
+        for (let i = cycleStart; i < step; i++) {
+          const pos = traversalSequence[i];
+          if (newGrid[pos]) {
+            usedShapesInCycle.add(newGrid[pos].shape);
           }
-        } else if (newPatternTemplate.length >= blockSize) {
-          // Replicate pattern only if uniqueTilesOnly is disabled
-          if (!uniqueTilesOnly) {
-            bestTile = newPatternTemplate[positionInBlock];
-          }
-          // If uniqueTilesOnly is enabled, let normal tile selection handle it below
+        }
+        
+        // Find tile with target rotation, preferring new shapes
+        const availableTiles = allTiles.filter(tile => 
+          !newUsedTiles.has(tile.id) && tile.rotation === targetRotation
+        );
+        
+        const newShapeTiles = availableTiles.filter(tile => !usedShapesInCycle.has(tile.shape));
+        bestTile = newShapeTiles.length > 0 ? newShapeTiles[0] : availableTiles[0];
+        
+        if (bestTile) {
+          console.log(`🎯 Pre-gen: Step ${step}, Cycle ${positionInCycle}, Tile ${bestTile.id} (rot ${bestTile.rotation}, shape ${bestTile.shape}), Used shapes: ${Array.from(usedShapesInCycle)}`);
         }
       }
       
@@ -669,6 +702,26 @@ export default function PositioningVisualization({
             </select>
           </div>
 
+          {/* Rotation Sequence Selector - only show when Rotation Group is selected */}
+          {priorityRules.includes('rotation-group') && (
+            <div>
+              <label className="block text-gray-300 text-sm mb-2">2x2 Rotation Sequence</label>
+              <select
+                value={rotationSequence}
+                onChange={(e) => setRotationSequence(e.target.value)}
+                className="w-full px-3 py-2 bg-gray-600 text-white rounded border border-gray-500"
+              >
+                <option value="0,1,2,3">0,1,2,3 (Sequential)</option>
+                <option value="0,2,1,3">0,2,1,3 (Cross Pattern)</option>
+                <option value="3,2,1,0">3,2,1,0 (Reverse)</option>
+                <option value="1,0,3,2">1,0,3,2 (Alternate)</option>
+                <option value="2,3,0,1">2,3,0,1 (Shift)</option>
+                <option value="0,0,0,0">0,0,0,0 (All Same)</option>
+                <option value="3,3,3,3">3,3,3,3 (All 270°)</option>
+              </select>
+            </div>
+          )}
+
           <div>
             <label className="block text-gray-300 text-sm mb-2">Animation Speed</label>
             <select
@@ -676,6 +729,7 @@ export default function PositioningVisualization({
               onChange={(e) => setAnimationSpeed(parseInt(e.target.value))}
               className="w-full px-3 py-2 bg-gray-600 text-white rounded border border-gray-500"
             >
+              <option value={1}>Instant</option>
               <option value={100}>Very Fast (0.1s)</option>
               <option value={300}>Fast (0.3s)</option>
               <option value={500}>Normal (0.5s)</option>
