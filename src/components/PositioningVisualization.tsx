@@ -8,6 +8,7 @@ import { generateTraversalSequence, TraversalPattern } from '@/lib/traversalPatt
 interface PositioningVisualizationProps {
   allTiles: TileData[];
   customColors: { a: string; b: string; c: string; d: string };
+  onRenderToMainGrid?: (tiles: (TileData | null)[]) => void;
 }
 
 
@@ -22,7 +23,8 @@ const PATTERN_COLORS = {
 
 export default function PositioningVisualization({ 
   allTiles, 
-  customColors 
+  customColors,
+  onRenderToMainGrid 
 }: PositioningVisualizationProps) {
   const [selectedPattern, setSelectedPattern] = useState<TraversalPattern>('spiral-clockwise');
   const [isAnimating, setIsAnimating] = useState(false);
@@ -41,10 +43,33 @@ export default function PositioningVisualization({
   // Pattern replication state
   const [patternTemplate, setPatternTemplate] = useState<TileData[]>([]);
   const [isReplicationMode, setIsReplicationMode] = useState(false);
+  const [duplicateCount, setDuplicateCount] = useState(0);
   
   const gridWidth = 12; // Correct grid size for 96 tiles
   const gridHeight = 8;  // Correct grid size for 96 tiles
   const totalCells = gridWidth * gridHeight;
+
+  // Detect duplicate tiles in the rendering grid
+  const detectDuplicates = () => {
+    const tileCount = new Map<string, number>();
+    
+    renderingGrid.forEach(tile => {
+      if (tile) {
+        const count = (tileCount.get(tile.id) || 0) + 1;
+        tileCount.set(tile.id, count);
+      }
+    });
+    
+    // Count tiles that appear more than once
+    let duplicateCount = 0;
+    tileCount.forEach((count, tileId) => {
+      if (count > 1) {
+        duplicateCount += count - 1; // Count all duplicate instances
+      }
+    });
+    
+    setDuplicateCount(duplicateCount);
+  };
 
   // (Removed duplicate function - now using shared utility from @/lib/traversalPatterns)
   // Find best tile based on priority rules
@@ -64,8 +89,15 @@ export default function PositioningVisualization({
       } else if (patternTemplate.length >= blockSize) {
         // For subsequent blocks, replicate the pattern from the template
         const templateTile = patternTemplate[positionInBlock];
-        console.log(`🔄 Replicating pattern: Block ${currentBlockIndex}, Position ${positionInBlock}, Template tile: ${templateTile?.id}`);
-        return templateTile;
+        
+        // If uniqueTilesOnly is enabled, don't replicate - find similar tiles instead
+        if (uniqueTilesOnly) {
+          console.log(`🎯 Unique tiles mode: Finding similar tile to ${templateTile?.id} instead of replicating (uniqueTilesOnly=${uniqueTilesOnly})`);
+          // Continue to normal tile selection logic below
+        } else {
+          console.log(`🔄 Replicating pattern: Block ${currentBlockIndex}, Position ${positionInBlock}, Template tile: ${templateTile?.id} (uniqueTilesOnly=${uniqueTilesOnly})`);
+          return templateTile;
+        }
       }
     }
     let availableTiles = [...allTiles];
@@ -440,6 +472,11 @@ export default function PositioningVisualization({
     }
   }, [currentStep, traversalSequence, uniqueTilesOnly]);
 
+  // Update duplicate count when rendering grid changes
+  useEffect(() => {
+    detectDuplicates();
+  }, [renderingGrid]);
+
   // Pre-generate all tiles at once
   const generateAllTiles = () => {
     console.log('🎯 Pre-generating all tiles...');
@@ -470,8 +507,11 @@ export default function PositioningVisualization({
             newPatternTemplate[positionInBlock] = bestTile;
           }
         } else if (newPatternTemplate.length >= blockSize) {
-          // Replicate pattern
-          bestTile = newPatternTemplate[positionInBlock];
+          // Replicate pattern only if uniqueTilesOnly is disabled
+          if (!uniqueTilesOnly) {
+            bestTile = newPatternTemplate[positionInBlock];
+          }
+          // If uniqueTilesOnly is enabled, let normal tile selection handle it below
         }
       }
       
@@ -594,6 +634,16 @@ export default function PositioningVisualization({
           >
             🔄 Reset
           </button>
+
+          {onRenderToMainGrid && (
+            <button
+              onClick={() => onRenderToMainGrid(renderingGrid)}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 
+                       transition-colors font-semibold"
+            >
+              📤 Render to Main Grid
+            </button>
+          )}
 
           <div className="text-sm text-gray-300">
             Step: {currentStep} / {traversalSequence.length}
@@ -760,7 +810,17 @@ export default function PositioningVisualization({
 
         {/* Tile Rendering Grid */}
         <div>
-          <h3 className="text-lg font-semibold text-white mb-2">Intelligent Tile Rendering</h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold text-white">Intelligent Tile Rendering</h3>
+            <div className="flex items-center gap-4 text-sm">
+              <span className="text-gray-300">
+                Tiles: {renderingGrid.filter(t => t !== null).length}/96
+              </span>
+              <span className={`${duplicateCount > 0 ? 'text-yellow-400' : 'text-green-400'}`}>
+                Duplicates: {duplicateCount}
+              </span>
+            </div>
+          </div>
           <div className="bg-gray-900 p-2 rounded-lg">
             <div 
               className="grid gap-0"

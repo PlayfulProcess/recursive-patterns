@@ -217,6 +217,13 @@ function HomeContent() {
         <PositioningVisualization 
           allTiles={tiles}
           customColors={customColors}
+          onRenderToMainGrid={(newTiles) => {
+            const newGrid = mainGrid.map((cell, index) => ({
+              ...cell,
+              tile: newTiles[index] || undefined
+            }));
+            setMainGrid(newGrid);
+          }}
         />
 
 
