@@ -214,20 +214,23 @@ function HomeContent() {
           onMiniGridUpdate={setMiniGrid}
         />
 
-        {/* Traversal Pattern Demo */}
-        <TraversalPatternDemo className="mb-8" />
+        {/* Pattern (Positioning) Visualization Section - Side by Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Traversal Pattern Demo */}
+          <TraversalPatternDemo className="" />
+
+          {/* Pattern Visualization */}
+          <PatternGrid 
+            gridWidth={12}
+            gridHeight={8}
+            className=""
+          />
+        </div>
 
         {/* Pattern Optimization Showcase */}
         <PatternOptimizationShowcase 
           allTiles={tiles}
           customColors={customColors}
-        />
-
-        {/* Pattern Visualization */}
-        <PatternGrid 
-          gridWidth={12}
-          gridHeight={8}
-          className="mb-8"
         />
 
         {/* AI Pattern Chat Popup */}

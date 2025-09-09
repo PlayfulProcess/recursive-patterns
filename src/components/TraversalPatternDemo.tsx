@@ -245,9 +245,9 @@ export default function TraversalPatternDemo({ className = '' }: TraversalPatter
   return (
     <div className={`bg-gray-800 rounded-lg shadow-lg p-8 ${className}`}>
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-white mb-4">Traversal Pattern Visualization</h2>
+        <h2 className="text-2xl font-bold text-white mb-4">Traversal Pattern (Positioning) Visualization</h2>
         <p className="text-gray-300 text-sm mb-4">
-          Watch how different algorithms traverse the grid step by step
+          Watch how different positioning methods traverse the grid step by step
         </p>
       </div>
 
