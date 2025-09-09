@@ -552,14 +552,35 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
   };
 
   const runEdgeMatching = () => {
-    // Run the optimize edge matching function
-    const newGrid = optimizeEdgeMatching(grid);
-    setGrid(newGrid);
+    if (isOptimizing) {
+      setTestMessage('⚠️ Another optimization is already running. Please wait...');
+      setTimeout(() => setTestMessage(''), 2000);
+      return;
+    }
+    
+    setIsOptimizing(true);
+    try {
+      // Run the optimize edge matching function
+      const newGrid = optimizeEdgeMatching(grid);
+      setGrid(newGrid);
+      setTestMessage('✅ Edge matching optimization complete!');
+      setTimeout(() => setTestMessage(''), 3000);
+    } finally {
+      setIsOptimizing(false);
+    }
   };
 
   // NEW: Configurable optimization functions
   const runOptimizeWithPreset = (presetName: string) => {
+    // Prevent multiple optimizations from running simultaneously
+    if (isOptimizing) {
+      setTestMessage('⚠️ Another optimization is already running. Please wait...');
+      setTimeout(() => setTestMessage(''), 2000);
+      return;
+    }
+
     try {
+      setIsOptimizing(true);
       console.log('🎯 Starting preset optimization:', presetName);
       console.log('optimizeWithPreset function:', optimizeWithPreset);
       console.log('OPTIMIZATION_PRESETS:', OPTIMIZATION_PRESETS);
@@ -579,15 +600,28 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
       setTestMessage(`✅ ${presetName} optimization complete! ${result.swaps} swaps, ${result.executionTime.toFixed(1)}ms`);
       
       // Clear message after delay
-      setTimeout(() => setTestMessage(''), 4000);
+      setTimeout(() => {
+        setTestMessage('');
+        setIsOptimizing(false);
+      }, 4000);
     } catch (error) {
       console.error('Error in runOptimizeWithPreset:', error);
       setTestMessage(`❌ Error: ${error.message}`);
-      setTimeout(() => setTestMessage(''), 4000);
+      setTimeout(() => {
+        setTestMessage('');
+        setIsOptimizing(false);
+      }, 4000);
     }
   };
 
   const runOptimizeForColor = (color: 'a' | 'b' | 'c' | 'd') => {
+    if (isOptimizing) {
+      setTestMessage('⚠️ Another optimization is already running. Please wait...');
+      setTimeout(() => setTestMessage(''), 2000);
+      return;
+    }
+    
+    setIsOptimizing(true);
     try {
       console.log('🎨 Starting color optimization:', color);
       console.log('optimizeForSingleColor function:', optimizeForSingleColor);
@@ -612,10 +646,19 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
       console.error('Error in runOptimizeForColor:', error);
       setTestMessage(`❌ Error: ${error.message}`);
       setTimeout(() => setTestMessage(''), 4000);
+    } finally {
+      setIsOptimizing(false);
     }
   };
 
   const runCustomOptimization = () => {
+    if (isOptimizing) {
+      setTestMessage('⚠️ Another optimization is already running. Please wait...');
+      setTimeout(() => setTestMessage(''), 2000);
+      return;
+    }
+    
+    setIsOptimizing(true);
     try {
       console.log('⚡ Starting custom optimization');
       console.log('optimizeGridConfigurable function:', optimizeGridConfigurable);
@@ -653,6 +696,8 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
       console.error('Error in runCustomOptimization:', error);
       setTestMessage(`❌ Error: ${error.message}`);
       setTimeout(() => setTestMessage(''), 4000);
+    } finally {
+      setIsOptimizing(false);
     }
   };
 
@@ -675,10 +720,18 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
   };
 
   const runOptimizeMirrorPlacement = () => {
+    if (isOptimizing) {
+      setTestMessage('⚠️ Another optimization is already running. Please wait...');
+      setTimeout(() => setTestMessage(''), 2000);
+      return;
+    }
+    
     if (!tileRelationships) {
       setTestMessage('❌ Tile relationships not loaded yet');
       return;
     }
+    
+    setIsOptimizing(true);
 
     setTestMessage('🪞 Optimizing mirror placement...');
     
@@ -700,6 +753,7 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
     
     // Clear message after 7 seconds (longer message)
     setTimeout(() => setTestMessage(''), 7000);
+    setIsOptimizing(false);
   };
 
 
@@ -1299,21 +1353,29 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
           </button>
           <button 
             onClick={runEdgeMatching}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-700 text-white rounded-lg
-                     hover:bg-purple-600 transition-all duration-200 font-semibold
-                     hover:scale-[1.02] active:scale-[0.98]"
+            disabled={isOptimizing}
+            className={`flex items-center gap-2 px-4 py-2 text-white rounded-lg
+                     transition-all duration-200 font-semibold
+                     hover:scale-[1.02] active:scale-[0.98]
+                     ${isOptimizing 
+                       ? 'bg-gray-600 cursor-not-allowed' 
+                       : 'bg-purple-700 hover:bg-purple-600'}`}
           >
-            <span>🎨</span>
-            Optimize Edge Matching
+            <span>{isOptimizing ? '⏳' : '🎨'}</span>
+            {isOptimizing ? 'Optimizing...' : 'Optimize Edge Matching'}
           </button>
           <button 
             onClick={runOptimizeMirrorPlacement}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-700 text-white rounded-lg
-                     hover:bg-emerald-600 transition-all duration-200 font-semibold
-                     hover:scale-[1.02] active:scale-[0.98]"
+            disabled={isOptimizing}
+            className={`flex items-center gap-2 px-4 py-2 text-white rounded-lg
+                     transition-all duration-200 font-semibold
+                     hover:scale-[1.02] active:scale-[0.98]
+                     ${isOptimizing 
+                       ? 'bg-gray-600 cursor-not-allowed' 
+                       : 'bg-emerald-700 hover:bg-emerald-600'}`}
           >
-            <span>🪞</span>
-            Optimize Mirrors
+            <span>{isOptimizing ? '⏳' : '🪞'}</span>
+            {isOptimizing ? 'Optimizing...' : 'Optimize Mirrors'}
           </button>
         </div>
 
@@ -1339,12 +1401,16 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
             
             <button 
               onClick={() => runOptimizeWithPreset(selectedPreset)}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-700 text-white rounded-lg
-                       hover:bg-indigo-600 transition-all duration-200 font-semibold
-                       hover:scale-[1.02] active:scale-[0.98]"
+              disabled={isOptimizing}
+              className={`flex items-center gap-2 px-4 py-2 text-white rounded-lg
+                       transition-all duration-200 font-semibold
+                       hover:scale-[1.02] active:scale-[0.98]
+                       ${isOptimizing 
+                         ? 'bg-gray-600 cursor-not-allowed' 
+                         : 'bg-indigo-700 hover:bg-indigo-600'}`}
             >
-              <span>🎯</span>
-              Run Preset
+              <span>{isOptimizing ? '⏳' : '🎯'}</span>
+              {isOptimizing ? 'Optimizing...' : 'Run Preset'}
             </button>
 
             <button 
@@ -1360,12 +1426,16 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
             {showCustomWeights && (
               <button 
                 onClick={runCustomOptimization}
-                className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white rounded-lg
-                         hover:bg-green-600 transition-all duration-200 font-semibold
-                         hover:scale-[1.02] active:scale-[0.98]"
+                disabled={isOptimizing}
+                className={`flex items-center gap-2 px-4 py-2 text-white rounded-lg
+                         transition-all duration-200 font-semibold
+                         hover:scale-[1.02] active:scale-[0.98]
+                         ${isOptimizing 
+                           ? 'bg-gray-600 cursor-not-allowed' 
+                           : 'bg-green-700 hover:bg-green-600'}`}
               >
-                <span>⚡</span>
-                Run Custom
+                <span>{isOptimizing ? '⏳' : '⚡'}</span>
+                {isOptimizing ? 'Optimizing...' : 'Run Custom'}
               </button>
             )}
           </div>
@@ -1375,39 +1445,55 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
             <span className="text-gray-300 text-sm py-2">Single Color Optimization:</span>
             <button 
               onClick={() => runOptimizeForColor('a')}
-              className="flex items-center gap-2 px-3 py-2 bg-pink-700 text-white rounded-lg
-                       hover:bg-pink-600 transition-all duration-200 font-semibold
-                       hover:scale-[1.02] active:scale-[0.98]"
+              disabled={isOptimizing}
+              className={`flex items-center gap-2 px-3 py-2 text-white rounded-lg
+                       transition-all duration-200 font-semibold
+                       hover:scale-[1.02] active:scale-[0.98]
+                       ${isOptimizing 
+                         ? 'bg-gray-600 cursor-not-allowed' 
+                         : 'bg-pink-700 hover:bg-pink-600'}`}
             >
-              <span>🅰️</span>
-              Color A
+              <span>{isOptimizing ? '⏳' : '🅰️'}</span>
+              {isOptimizing ? 'Optimizing...' : 'Color A'}
             </button>
             <button 
               onClick={() => runOptimizeForColor('b')}
-              className="flex items-center gap-2 px-3 py-2 bg-blue-700 text-white rounded-lg
-                       hover:bg-blue-600 transition-all duration-200 font-semibold
-                       hover:scale-[1.02] active:scale-[0.98]"
+              disabled={isOptimizing}
+              className={`flex items-center gap-2 px-3 py-2 text-white rounded-lg
+                       transition-all duration-200 font-semibold
+                       hover:scale-[1.02] active:scale-[0.98]
+                       ${isOptimizing 
+                         ? 'bg-gray-600 cursor-not-allowed' 
+                         : 'bg-blue-700 hover:bg-blue-600'}`}
             >
-              <span>🅱️</span>
-              Color B
+              <span>{isOptimizing ? '⏳' : '🅱️'}</span>
+              {isOptimizing ? 'Optimizing...' : 'Color B'}
             </button>
             <button 
               onClick={() => runOptimizeForColor('c')}
-              className="flex items-center gap-2 px-3 py-2 bg-orange-700 text-white rounded-lg
-                       hover:bg-orange-600 transition-all duration-200 font-semibold
-                       hover:scale-[1.02] active:scale-[0.98]"
+              disabled={isOptimizing}
+              className={`flex items-center gap-2 px-3 py-2 text-white rounded-lg
+                       transition-all duration-200 font-semibold
+                       hover:scale-[1.02] active:scale-[0.98]
+                       ${isOptimizing 
+                         ? 'bg-gray-600 cursor-not-allowed' 
+                         : 'bg-orange-700 hover:bg-orange-600'}`}
             >
-              <span>🅲</span>
-              Color C
+              <span>{isOptimizing ? '⏳' : '🅲'}</span>
+              {isOptimizing ? 'Optimizing...' : 'Color C'}
             </button>
             <button 
               onClick={() => runOptimizeForColor('d')}
-              className="flex items-center gap-2 px-3 py-2 bg-green-700 text-white rounded-lg
-                       hover:bg-green-600 transition-all duration-200 font-semibold
-                       hover:scale-[1.02] active:scale-[0.98]"
+              disabled={isOptimizing}
+              className={`flex items-center gap-2 px-3 py-2 text-white rounded-lg
+                       transition-all duration-200 font-semibold
+                       hover:scale-[1.02] active:scale-[0.98]
+                       ${isOptimizing 
+                         ? 'bg-gray-600 cursor-not-allowed' 
+                         : 'bg-green-700 hover:bg-green-600'}`}
             >
-              <span>🅳</span>
-              Color D
+              <span>{isOptimizing ? '⏳' : '🅳'}</span>
+              {isOptimizing ? 'Optimizing...' : 'Color D'}
             </button>
           </div>
 

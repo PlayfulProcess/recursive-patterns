@@ -354,11 +354,6 @@
                 });
                 
                 console.log('CSV loaded:', csvData.length, 'rows');
-                console.log('Headers:', headers);
-                console.log('Raw first line:', lines[1]);
-                console.log('Parsed first row:', csvData[0]);
-                console.log('Available keys:', Object.keys(csvData[0]));
-                console.log('Sample quadrant values:', csvData.slice(0, 10).map(r => r.patternQuadrants));
             } catch (error) {
                 console.error('Failed to load CSV:', error);
                 csvData = null;
@@ -387,8 +382,6 @@
             // Show pattern info
             const patternMap = getPatternMapping(patternType);
             const uniqueSections = [...new Set(Object.values(patternMap))];
-            console.log('Pattern map:', patternMap);
-            console.log('Unique sections:', uniqueSections);
             document.getElementById('sequence').textContent = 
                 `Pattern sections: ${uniqueSections.join(', ')} (${uniqueSections.length} unique sections)`;
         }
@@ -421,19 +414,15 @@
             // Clear existing classes
             cell.className = 'cell';
             
-            console.log(`Applying ${patternType}: ${sectionValue} to cell ${cell.id}`);
-            
             if (patternType === 'pattern2x2') {
                 // 2x2 blocks: Block1, Block2, etc. - each block should have same color
                 const blockNum = parseInt(sectionValue.replace('Block', '')) || 1;
                 const colorIndex = (blockNum - 1) % 12; // Use 12 colors instead of 6
                 cell.classList.add(`block-color-${colorIndex}`);
-                console.log(`Block ${blockNum} -> color ${colorIndex}`);
             } else if (patternType === 'patternQuadrants') {
                 // Four quadrants: NW, NE, SW, SE
                 const className = `quadrant-${sectionValue}`;
                 cell.classList.add(className);
-                console.log(`Added class: ${className}`);
             } else if (patternType === 'patternRowMajor') {
                 // Row major: Row1, Row2, etc. - each row should have same color
                 const rowNum = parseInt(sectionValue.replace('Row', '')) || 1;
@@ -450,13 +439,10 @@
         // Get pattern mapping for display
         function getPatternMapping(patternType) {
             const mapping = {};
-            csvData.forEach((row, index) => {
+            csvData.forEach((row) => {
                 const key = `${row.col}-${row.row}`;
                 const value = row[patternType];
                 mapping[key] = value;
-                if (index < 5) { // Debug first 5 rows
-                    console.log(`Row ${index}: col=${row.col}, row=${row.row}, ${patternType}=${value}`);
-                }
             });
             return mapping;
         }

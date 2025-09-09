@@ -7,6 +7,7 @@ import ColorPalette, { ColorScheme } from '@/components/ColorPalette';
 import MainGridEnhanced from '@/components/MainGridEnhanced';
 import MiniPlayground from '@/components/MiniPlayground';
 import AIPatternChatPopup from '@/components/AIPatternChatPopup';
+import { PatternGrid } from '@/components/PatternVisualization';
 import { TileProvider, useTiles } from '@/contexts/TileContext';
 
 interface GridCell {
@@ -209,6 +210,13 @@ function HomeContent() {
           customColors={customColors}
           miniGrid={miniGrid}
           onMiniGridUpdate={setMiniGrid}
+        />
+
+        {/* Pattern Visualization */}
+        <PatternGrid 
+          gridWidth={12}
+          gridHeight={8}
+          className="mb-8"
         />
 
         {/* AI Pattern Chat Popup */}
