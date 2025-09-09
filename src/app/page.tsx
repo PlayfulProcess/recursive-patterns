@@ -8,7 +8,6 @@ import MainGridEnhanced from '@/components/MainGridEnhanced';
 import MiniPlayground from '@/components/MiniPlayground';
 import AIPatternChatPopup from '@/components/AIPatternChatPopup';
 import { PatternGrid } from '@/components/PatternVisualization';
-import PatternOptimizationShowcase from '@/components/PatternOptimizationShowcase';
 import PositioningVisualization from '@/components/PositioningVisualization';
 import { TileProvider, useTiles } from '@/contexts/TileContext';
 
@@ -220,11 +219,6 @@ function HomeContent() {
           customColors={customColors}
         />
 
-        {/* Pattern Optimization Showcase */}
-        <PatternOptimizationShowcase 
-          allTiles={tiles}
-          customColors={customColors}
-        />
 
         {/* AI Pattern Chat Popup */}
         <AIPatternChatPopup

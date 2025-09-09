@@ -3,13 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { TileData } from './CSVTable';
 import TileRenderer from './TileRenderer';
+import { generateTraversalSequence, TraversalPattern } from '@/lib/traversalPatterns';
 
 interface PositioningVisualizationProps {
   allTiles: TileData[];
   customColors: { a: string; b: string; c: string; d: string };
 }
 
-type TraversalPattern = 'row-major' | 'column-major' | 'spiral-clockwise' | 'spiral-counter' | 'diagonal' | 'block-2x2' | 'checkerboard' | 'random-walk';
 
 type TilePriorityRule = 'horizontal-mirrors' | 'vertical-mirrors' | 'rotation-90' | 'rotation-180' | 'rotation-270' | 'shape-group' | 'rotation-group';
 
@@ -38,127 +38,36 @@ export default function PositioningVisualization({
   const [shapeGroupTarget, setShapeGroupTarget] = useState<string>('same-as-previous');
   const [rotationGroupTarget, setRotationGroupTarget] = useState<string>('same-as-previous');
   
+  // Pattern replication state
+  const [patternTemplate, setPatternTemplate] = useState<TileData[]>([]);
+  const [isReplicationMode, setIsReplicationMode] = useState(false);
+  
   const gridWidth = 12; // Correct grid size for 96 tiles
   const gridHeight = 8;  // Correct grid size for 96 tiles
   const totalCells = gridWidth * gridHeight;
 
-  // Generate traversal sequence based on pattern
-  const generateTraversalSequence = (pattern: TraversalPattern): number[] => {
-    const sequence: number[] = [];
-    
-    switch (pattern) {
-      case 'row-major':
-        for (let row = 0; row < gridHeight; row++) {
-          for (let col = 0; col < gridWidth; col++) {
-            sequence.push(row * gridWidth + col);
-          }
-        }
-        break;
-        
-      case 'column-major':
-        for (let col = 0; col < gridWidth; col++) {
-          for (let row = 0; row < gridHeight; row++) {
-            sequence.push(row * gridWidth + col);
-          }
-        }
-        break;
-        
-      case 'spiral-clockwise':
-        let top = 0, bottom = gridHeight - 1, left = 0, right = gridWidth - 1;
-        
-        while (top <= bottom && left <= right) {
-          // Top row (left to right)
-          for (let col = left; col <= right; col++) {
-            sequence.push(top * gridWidth + col);
-          }
-          top++;
-          
-          // Right column (top to bottom)  
-          for (let row = top; row <= bottom; row++) {
-            sequence.push(row * gridWidth + right);
-          }
-          right--;
-          
-          // Bottom row (right to left)
-          if (top <= bottom) {
-            for (let col = right; col >= left; col--) {
-              sequence.push(bottom * gridWidth + col);
-            }
-            bottom--;
-          }
-          
-          // Left column (bottom to top)
-          if (left <= right) {
-            for (let row = bottom; row >= top; row--) {
-              sequence.push(row * gridWidth + left);
-            }
-            left++;
-          }
-        }
-        break;
-        
-      case 'diagonal':
-        for (let d = 0; d < gridHeight + gridWidth - 1; d++) {
-          for (let row = 0; row < gridHeight; row++) {
-            const col = d - row;
-            if (col >= 0 && col < gridWidth) {
-              sequence.push(row * gridWidth + col);
-            }
-          }
-        }
-        break;
-        
-      case 'block-2x2':
-        for (let blockRow = 0; blockRow < gridHeight; blockRow += 2) {
-          for (let blockCol = 0; blockCol < gridWidth; blockCol += 2) {
-            for (let r = blockRow; r < Math.min(blockRow + 2, gridHeight); r++) {
-              for (let c = blockCol; c < Math.min(blockCol + 2, gridWidth); c++) {
-                sequence.push(r * gridWidth + c);
-              }
-            }
-          }
-        }
-        break;
-        
-      case 'checkerboard':
-        // First pass: even positions
-        for (let row = 0; row < gridHeight; row++) {
-          for (let col = 0; col < gridWidth; col++) {
-            if ((row + col) % 2 === 0) {
-              sequence.push(row * gridWidth + col);
-            }
-          }
-        }
-        // Second pass: odd positions
-        for (let row = 0; row < gridHeight; row++) {
-          for (let col = 0; col < gridWidth; col++) {
-            if ((row + col) % 2 === 1) {
-              sequence.push(row * gridWidth + col);
-            }
-          }
-        }
-        break;
-        
-      case 'random-walk':
-        const positions = Array.from({ length: totalCells }, (_, i) => i);
-        for (let i = positions.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [positions[i], positions[j]] = [positions[j], positions[i]];
-        }
-        sequence.push(...positions);
-        break;
-        
-      default:
-        for (let i = 0; i < totalCells; i++) {
-          sequence.push(i);
-        }
-    }
-    
-    return sequence;
-  };
-
+  // (Removed duplicate function - now using shared utility from @/lib/traversalPatterns)
   // Find best tile based on priority rules
   const findBestTile = (position: number, previousTile?: TileData | null): TileData | null => {
+    // Check if we need pattern replication for block-2x2 with shape/rotation rules
+    const needsReplication = selectedPattern === 'block-2x2' && 
+      (priorityRules.includes('shape-group') || priorityRules.includes('rotation-group'));
+    
+    if (needsReplication) {
+      const blockSize = 4; // 2x2 = 4 tiles per block
+      const currentBlockIndex = Math.floor(position / blockSize);
+      const positionInBlock = position % blockSize;
+      
+      // If we're in the first block, build the template
+      if (currentBlockIndex === 0) {
+        // Let normal logic handle the first block and build template
+      } else if (patternTemplate.length >= blockSize) {
+        // For subsequent blocks, replicate the pattern from the template
+        const templateTile = patternTemplate[positionInBlock];
+        console.log(`🔄 Replicating pattern: Block ${currentBlockIndex}, Position ${positionInBlock}, Template tile: ${templateTile?.id}`);
+        return templateTile;
+      }
+    }
     let availableTiles = [...allTiles];
     
     // Filter out used tiles if uniqueTilesOnly is enabled
@@ -167,6 +76,7 @@ export default function PositioningVisualization({
     }
     
     if (availableTiles.length === 0) {
+      console.log(`🚨 No available tiles for position ${position}. Used tiles: ${usedTiles.size}/${allTiles.length}`);
       return null; // No tiles available
     }
     
@@ -394,14 +304,70 @@ export default function PositioningVisualization({
 
   // Update traversal sequence when pattern changes
   useEffect(() => {
-    const sequence = generateTraversalSequence(selectedPattern);
+    const sequence = generateTraversalSequence(selectedPattern, gridWidth, gridHeight);
     setTraversalSequence(sequence);
     setCurrentStep(0);
     setRenderingGrid(new Array(totalCells).fill(null));
     setUsedTiles(new Set());
-  }, [selectedPattern, totalCells]);
+    setPatternTemplate([]);
+    
+    // Pre-generate all tiles immediately when pattern changes
+    if (sequence.length > 0 && allTiles.length > 0) {
+      setTimeout(() => {
+        console.log('🎯 Pre-generating all tiles...');
+        const newGrid = new Array(totalCells).fill(null);
+        const newUsedTiles = new Set<string>();
+        const newPatternTemplate: TileData[] = [];
+        
+        for (let step = 0; step < sequence.length; step++) {
+          const position = sequence[step];
+          const previousPosition = step > 0 ? sequence[step - 1] : null;
+          const previousTile = previousPosition !== null ? newGrid[previousPosition] : null;
+          
+          // Use pattern replication logic
+          const needsReplication = selectedPattern === 'block-2x2' && 
+            (priorityRules.includes('shape-group') || priorityRules.includes('rotation-group'));
+          
+          let bestTile: TileData | null = null;
+          
+          if (needsReplication) {
+            const blockSize = 4;
+            const currentBlockIndex = Math.floor(step / blockSize);
+            const positionInBlock = step % blockSize;
+            
+            if (currentBlockIndex === 0) {
+              // Build template from first block
+              bestTile = findBestTileForPreGeneration(position, previousTile, newUsedTiles);
+              if (bestTile && positionInBlock < 4) {
+                newPatternTemplate[positionInBlock] = bestTile;
+              }
+            } else if (newPatternTemplate.length >= blockSize) {
+              // Replicate pattern
+              bestTile = newPatternTemplate[positionInBlock];
+            }
+          }
+          
+          if (!bestTile) {
+            bestTile = findBestTileForPreGeneration(position, previousTile, newUsedTiles);
+          }
+          
+          if (bestTile) {
+            newGrid[position] = bestTile;
+            if (uniqueTilesOnly) {
+              newUsedTiles.add(bestTile.id);
+            }
+          }
+        }
+        
+        setRenderingGrid(newGrid);
+        setUsedTiles(newUsedTiles);
+        setPatternTemplate(newPatternTemplate);
+        console.log('✅ Pre-generated all tiles:', newUsedTiles.size, '/ 96');
+      }, 100);
+    }
+  }, [selectedPattern, totalCells, priorityRules, uniqueTilesOnly]);
 
-  // Animation effect
+  // Animation effect - Fixed to prevent multiple intervals and sync issues
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
     
@@ -413,26 +379,6 @@ export default function PositioningVisualization({
             setIsAnimating(false);
             return prev;
           }
-          
-          // Add tile to rendering grid
-          const position = traversalSequence[prev];
-          const previousPosition = prev > 0 ? traversalSequence[prev - 1] : null;
-          const previousTile = previousPosition !== null ? renderingGrid[previousPosition] : null;
-          
-          const bestTile = findBestTile(position, previousTile);
-          
-          if (bestTile) {
-            setRenderingGrid(prevGrid => {
-              const newGrid = [...prevGrid];
-              newGrid[position] = bestTile;
-              return newGrid;
-            });
-            
-            if (uniqueTilesOnly) {
-              setUsedTiles(prev => new Set([...prev, bestTile.id]));
-            }
-          }
-          
           return next;
         });
       }, animationSpeed);
@@ -443,13 +389,142 @@ export default function PositioningVisualization({
         clearInterval(intervalId);
       }
     };
-  }, [isAnimating, animationSpeed, currentStep, traversalSequence, renderingGrid, usedTiles, uniqueTilesOnly, priorityRules]);
+  }, [isAnimating, animationSpeed, traversalSequence.length]);
+
+  // Separate effect to update rendering grid based on current step
+  useEffect(() => {
+    if (currentStep > 0 && currentStep <= traversalSequence.length) {
+      const position = traversalSequence[currentStep - 1];
+      
+      // Use functional update to avoid dependency on renderingGrid
+      setRenderingGrid(prevGrid => {
+        // Only add tile if this position doesn't already have one
+        if (!prevGrid[position]) {
+          const previousPosition = currentStep > 1 ? traversalSequence[currentStep - 2] : null;
+          const previousTile = previousPosition !== null ? prevGrid[previousPosition] : null;
+          
+          const bestTile = findBestTile(position, previousTile);
+          
+          if (bestTile) {
+            const newGrid = [...prevGrid];
+            newGrid[position] = bestTile;
+            
+            if (uniqueTilesOnly) {
+              setUsedTiles(prev => {
+                const newUsedTiles = new Set([...prev, bestTile.id]);
+                console.log(`🎯 Position ${currentStep}: Placed tile ${bestTile.id}. Used: ${newUsedTiles.size}/96`);
+                return newUsedTiles;
+              });
+            }
+            
+            // Build pattern template from first block for replication
+            const needsReplication = selectedPattern === 'block-2x2' && 
+              (priorityRules.includes('shape-group') || priorityRules.includes('rotation-group'));
+            if (needsReplication && currentStep <= 4) {
+              setPatternTemplate(prev => {
+                const newTemplate = [...prev, bestTile];
+                if (newTemplate.length === 4) {
+                  console.log(`📋 Pattern template built:`, newTemplate.map(t => t.id));
+                }
+                return newTemplate;
+              });
+            }
+            
+            return newGrid;
+          } else {
+            console.log(`❌ Position ${currentStep}: No bestTile found for position ${position}`);
+          }
+        }
+        return prevGrid;
+      });
+    }
+  }, [currentStep, traversalSequence, uniqueTilesOnly]);
+
+  // Pre-generate all tiles at once
+  const generateAllTiles = () => {
+    console.log('🎯 Pre-generating all tiles...');
+    const newGrid = new Array(totalCells).fill(null);
+    const newUsedTiles = new Set<string>();
+    const newPatternTemplate: TileData[] = [];
+    
+    for (let step = 0; step < traversalSequence.length; step++) {
+      const position = traversalSequence[step];
+      const previousPosition = step > 0 ? traversalSequence[step - 1] : null;
+      const previousTile = previousPosition !== null ? newGrid[previousPosition] : null;
+      
+      // Use pattern replication logic
+      const needsReplication = selectedPattern === 'block-2x2' && 
+        (priorityRules.includes('shape-group') || priorityRules.includes('rotation-group'));
+      
+      let bestTile: TileData | null = null;
+      
+      if (needsReplication) {
+        const blockSize = 4;
+        const currentBlockIndex = Math.floor(step / blockSize);
+        const positionInBlock = step % blockSize;
+        
+        if (currentBlockIndex === 0) {
+          // Build template from first block
+          bestTile = findBestTileForPreGeneration(position, previousTile, newUsedTiles);
+          if (bestTile && positionInBlock < 4) {
+            newPatternTemplate[positionInBlock] = bestTile;
+          }
+        } else if (newPatternTemplate.length >= blockSize) {
+          // Replicate pattern
+          bestTile = newPatternTemplate[positionInBlock];
+        }
+      }
+      
+      if (!bestTile) {
+        bestTile = findBestTileForPreGeneration(position, previousTile, newUsedTiles);
+      }
+      
+      if (bestTile) {
+        newGrid[position] = bestTile;
+        if (uniqueTilesOnly) {
+          newUsedTiles.add(bestTile.id);
+        }
+      }
+    }
+    
+    setRenderingGrid(newGrid);
+    setUsedTiles(newUsedTiles);
+    setPatternTemplate(newPatternTemplate);
+    console.log('✅ Pre-generated all tiles:', newUsedTiles.size, '/ 96');
+  };
+
+  // Helper function for pre-generation (simplified version of findBestTile)
+  const findBestTileForPreGeneration = (position: number, previousTile: TileData | null, currentUsedTiles: Set<string>): TileData | null => {
+    let availableTiles = [...allTiles];
+    
+    if (uniqueTilesOnly) {
+      availableTiles = availableTiles.filter(tile => !currentUsedTiles.has(tile.id));
+    }
+    
+    if (availableTiles.length === 0) {
+      return null;
+    }
+    
+    if (!previousTile) {
+      return availableTiles[Math.floor(Math.random() * availableTiles.length)];
+    }
+    
+    // Apply priority rules (simplified version)
+    const scoredTiles = availableTiles.map(tile => ({
+      tile,
+      score: calculateTileScore(tile, position, previousTile)
+    }));
+    
+    scoredTiles.sort((a, b) => b.score - a.score);
+    return scoredTiles[0].tile;
+  };
 
   const resetAnimation = () => {
     setCurrentStep(0);
     setIsAnimating(false);
     setRenderingGrid(new Array(totalCells).fill(null));
     setUsedTiles(new Set());
+    setPatternTemplate([]);
   };
 
   const getCellState = (position: number) => {
@@ -697,7 +772,7 @@ export default function PositioningVisualization({
                 <div
                   key={position}
                   className={`aspect-square transition-all duration-200 border border-gray-700 ${
-                    position < currentStep && tile ? 'opacity-100' : 'opacity-30'
+                    traversalSequence.indexOf(position) < currentStep && tile ? 'opacity-100' : 'opacity-30'
                   } ${
                     traversalSequence[currentStep] === position && isAnimating ? 'ring-2 ring-yellow-400' : ''
                   }`}
