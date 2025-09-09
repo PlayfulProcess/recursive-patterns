@@ -8,6 +8,8 @@ import MainGridEnhanced from '@/components/MainGridEnhanced';
 import MiniPlayground from '@/components/MiniPlayground';
 import AIPatternChatPopup from '@/components/AIPatternChatPopup';
 import { PatternGrid } from '@/components/PatternVisualization';
+import PatternOptimizationShowcase from '@/components/PatternOptimizationShowcase';
+import TraversalPatternDemo from '@/components/TraversalPatternDemo';
 import { TileProvider, useTiles } from '@/contexts/TileContext';
 
 interface GridCell {
@@ -210,6 +212,15 @@ function HomeContent() {
           customColors={customColors}
           miniGrid={miniGrid}
           onMiniGridUpdate={setMiniGrid}
+        />
+
+        {/* Traversal Pattern Demo */}
+        <TraversalPatternDemo className="mb-8" />
+
+        {/* Pattern Optimization Showcase */}
+        <PatternOptimizationShowcase 
+          allTiles={tiles}
+          customColors={customColors}
         />
 
         {/* Pattern Visualization */}
