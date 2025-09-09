@@ -23,6 +23,21 @@ const TileRenderer: React.FC<TileProps> = ({
   }
 
   const { id, edgeN, edgeE, edgeS, edgeW, shape } = tile;
+  
+  // Get proper tile family name based on rotation value
+  const getTileFamilyName = (tile: TileData): string => {
+    const rotationValue = (tile as any).rotation || '0';
+    const rotationNames: { [key: string]: string } = {
+      '0': 'Base',
+      '1': 'Rotation 90°', 
+      '2': 'Rotation 180°',
+      '3': 'Rotation 270°'
+    };
+    
+    const rotationName = rotationNames[rotationValue] || `Rotation ${rotationValue}`;
+    const shapeGroup = tile.shape || '1';
+    return `${rotationName} - Shape ${shapeGroup}`;
+  };
   const getColor = (edge: string) => {
     if (customColors) {
       switch (edge) {
@@ -114,10 +129,11 @@ const TileRenderer: React.FC<TileProps> = ({
           />
         </svg>
       </div>
-      <div className="text-xs text-center">
-        <div className="font-mono text-white">{id}</div>
-        <div className="text-gray-400">{edges.join('-')} Shape:{shape}</div>
-      </div>
+      {!seamless && (
+        <div className="text-xs text-center">
+          <div className="font-mono text-white">{id}</div>
+        </div>
+      )}
     </div>
   );
 };
