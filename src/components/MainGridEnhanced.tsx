@@ -772,92 +772,7 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
     setPatternAnalysis(analysis);
   };
 
-  // Test recursive functions - require a selected cell
-  const testFindMirrorTile = (direction: 'horizontal' | 'vertical') => {
-    console.log('🪞 testFindMirrorTile called with direction:', direction);
-    
-    if (!tileRelationships) {
-      setTestMessage('❌ Tile relationships not loaded yet');
-      return;
-    }
 
-    const selectedCell = Array.from(selectedCells).length === 1 
-      ? getCellFromKey(Array.from(selectedCells)[0])
-      : null;
-    
-    if (!selectedCell?.tile) {
-      setTestMessage('❌ Please select exactly one cell with a tile first');
-      return;
-    }
-
-    const mirrorTile = findMirrorTile(selectedCell.tile, direction, tileRelationships);
-    if (mirrorTile) {
-      // Highlight the mirror tile in the grid
-      const mirrorPositions = findTilePositions([mirrorTile.id]);
-      setHighlightedTiles(new Set(mirrorPositions));
-      setHighlightType(`mirror-${direction}`);
-      
-      setTestMessage(`🪞 Found ${direction} mirror: ${selectedCell.tile.id} → ${mirrorTile.id} (highlighted in green)`);
-      
-      // Try to place mirror tile in adjacent position if not already placed
-      if (mirrorPositions.length === 0) {
-        const currentPos = selectedCell.y * 12 + selectedCell.x;
-        let targetPos: number;
-        
-        if (direction === 'horizontal') {
-          targetPos = selectedCell.x < 11 ? currentPos + 1 : currentPos - 1;
-        } else {
-          targetPos = selectedCell.y < 7 ? currentPos + 12 : currentPos - 12;
-        }
-        
-        if (targetPos >= 0 && targetPos < 96 && !grid[targetPos].tile) {
-          const newGrid = [...grid];
-          newGrid[targetPos] = { ...newGrid[targetPos], tile: mirrorTile, rotation: 0 };
-          setGrid(newGrid);
-          
-          // Update highlights to include the newly placed tile
-          const targetCell = grid.find((_, index) => index === targetPos);
-          if (targetCell) {
-            setHighlightedTiles(new Set([getCellKey(targetCell)]));
-            setTestMessage(prev => prev + ` ✅ Placed and highlighted`);
-          }
-        }
-      }
-    } else {
-      clearHighlights();
-      setTestMessage(`❌ No ${direction} mirror found for ${selectedCell.tile.id}`);
-    }
-  };
-
-  const testFindRotationFamily = () => {
-    if (!tileRelationships) {
-      setTestMessage('❌ Tile relationships not loaded yet');
-      return;
-    }
-
-    const selectedCell = Array.from(selectedCells).length === 1 
-      ? getCellFromKey(Array.from(selectedCells)[0])
-      : null;
-    
-    if (!selectedCell?.tile) {
-      setTestMessage('❌ Please select exactly one cell with a tile first');
-      return;
-    }
-
-    const rotationFamily = findRotationFamily(selectedCell.tile, tileRelationships);
-    if (rotationFamily.length > 0) {
-      // Highlight all rotation variants in the grid
-      const rotationIds = rotationFamily.map(t => t.id);
-      const rotationPositions = findTilePositions(rotationIds);
-      setHighlightedTiles(new Set(rotationPositions));
-      setHighlightType('rotation');
-      
-      setTestMessage(`🔄 Found ${rotationFamily.length} rotations of tile "${selectedCell.tile.id}" (highlighted in blue): ${rotationFamily.map(t => t.id).join(', ')}`);
-    } else {
-      clearHighlights();
-      setTestMessage(`❌ No rotation variants found for ${selectedCell.tile.id}`);
-    }
-  };
 
   const selectSameShape = () => {
     const selectedCell = Array.from(selectedCells).length === 1 
@@ -1063,40 +978,6 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
   };
 
 
-  const testFindEdgeMatches = (direction: 'north' | 'south' | 'east' | 'west') => {
-    console.log('🔗 testFindEdgeMatches called with direction:', direction);
-    
-    if (!tileRelationships) {
-      setTestMessage('❌ Tile relationships not loaded yet');
-      return;
-    }
-
-    const selectedCell = Array.from(selectedCells).length === 1 
-      ? getCellFromKey(Array.from(selectedCells)[0])
-      : null;
-    
-    if (!selectedCell?.tile) {
-      setTestMessage('❌ Please select exactly one cell with a tile first');
-      return;
-    }
-
-    const edgeMatches = findEdgeMatches(selectedCell.tile, direction, tileRelationships);
-    if (edgeMatches.length > 0) {
-      // Highlight all edge matches in the grid
-      const edgeIds = edgeMatches.map(t => t.id);
-      const edgePositions = findTilePositions(edgeIds);
-      console.log('🎯 Setting highlights:', edgePositions, 'type:', `edge-${direction}`);
-      setHighlightedTiles(new Set(edgePositions));
-      setHighlightType(`edge-${direction}`);
-      
-      const displayMatches = edgeMatches.slice(0, 5).map(t => t.id).join(', ');
-      const moreText = edgeMatches.length > 5 ? `... (${edgeMatches.length - 5} more)` : '';
-      setTestMessage(`🔗 Found ${edgeMatches.length} edge matches for ${direction} (highlighted in orange): ${displayMatches}${moreText}`);
-    } else {
-      clearHighlights();
-      setTestMessage(`❌ No edge matches found for ${selectedCell.tile.id} in ${direction} direction`);
-    }
-  };
 
 
   // Detect duplicate tiles
@@ -1721,33 +1602,6 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
           </div>
           <div className="flex flex-wrap gap-2">
             <button 
-              onClick={() => testFindMirrorTile('horizontal')}
-              className="flex items-center gap-2 px-3 py-2 bg-green-700 text-white rounded
-                       hover:bg-green-600 transition-all duration-200 text-sm
-                       hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <span>🪞</span>
-              Mirror H
-            </button>
-            <button 
-              onClick={() => testFindMirrorTile('vertical')}
-              className="flex items-center gap-2 px-3 py-2 bg-green-700 text-white rounded
-                       hover:bg-green-600 transition-all duration-200 text-sm
-                       hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <span>🪞</span>
-              Mirror V
-            </button>
-            <button 
-              onClick={testFindRotationFamily}
-              className="flex items-center gap-2 px-3 py-2 bg-blue-700 text-white rounded
-                       hover:bg-blue-600 transition-all duration-200 text-sm
-                       hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <span>🔄</span>
-              Rotations
-            </button>
-            <button 
               onClick={selectSameShape}
               className="flex items-center gap-2 px-3 py-2 bg-purple-700 text-white rounded
                        hover:bg-purple-600 transition-all duration-200 text-sm
@@ -1755,42 +1609,6 @@ export default function MainGridEnhanced({ allTiles, customColors, grid: externa
             >
               <span>🔷</span>
               Same Shape
-            </button>
-            <button 
-              onClick={() => testFindEdgeMatches('north')}
-              className="flex items-center gap-2 px-3 py-2 bg-orange-700 text-white rounded
-                       hover:bg-orange-600 transition-all duration-200 text-sm
-                       hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <span>🔗</span>
-              Edge ↑
-            </button>
-            <button 
-              onClick={() => testFindEdgeMatches('south')}
-              className="flex items-center gap-2 px-3 py-2 bg-orange-700 text-white rounded
-                       hover:bg-orange-600 transition-all duration-200 text-sm
-                       hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <span>🔗</span>
-              Edge ↓
-            </button>
-            <button 
-              onClick={() => testFindEdgeMatches('east')}
-              className="flex items-center gap-2 px-3 py-2 bg-orange-700 text-white rounded
-                       hover:bg-orange-600 transition-all duration-200 text-sm
-                       hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <span>🔗</span>
-              Edge →
-            </button>
-            <button 
-              onClick={() => testFindEdgeMatches('west')}
-              className="flex items-center gap-2 px-3 py-2 bg-orange-700 text-white rounded
-                       hover:bg-orange-600 transition-all duration-200 text-sm
-                       hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <span>🔗</span>
-              Edge ←
             </button>
           </div>
 
