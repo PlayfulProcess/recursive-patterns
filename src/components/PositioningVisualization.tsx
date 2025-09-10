@@ -380,10 +380,6 @@ export default function PositioningVisualization({
       intervalId = setInterval(() => {
         setCurrentStep(prev => {
           const next = prev + 1;
-          if (next >= traversalSequence.length) {
-            setIsAnimating(false);
-            return prev;
-          }
           return next;
         });
       }, animationSpeed);
@@ -395,6 +391,13 @@ export default function PositioningVisualization({
       }
     };
   }, [isAnimating, animationSpeed, traversalSequence.length]);
+
+  // Separate effect to stop animation when complete
+  useEffect(() => {
+    if (isAnimating && currentStep >= traversalSequence.length) {
+      setIsAnimating(false);
+    }
+  }, [currentStep, traversalSequence.length, isAnimating]);
 
   // Separate effect to update rendering grid based on current step
   useEffect(() => {
@@ -560,23 +563,22 @@ export default function PositioningVisualization({
             </select>
           </div>
 
-          {/* Rotation Sequence Selector - only show when Rotation Group is selected */}
+          {/* Rotation Sequence Input - only show when Rotation Group is selected */}
           {priorityRules.includes('rotation-group') && (
             <div>
-              <label className="block text-gray-300 text-sm mb-2">2x2 Rotation Sequence</label>
-              <select
+              <label className="block text-gray-300 text-sm mb-2">
+                Rotation Sequence (comma-separated)
+              </label>
+              <input
+                type="text"
                 value={rotationSequence}
                 onChange={(e) => setRotationSequence(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-600 text-white rounded border border-gray-500"
-              >
-                <option value="0,1,2,3">0,1,2,3 (Sequential)</option>
-                <option value="0,2,1,3">0,2,1,3 (Cross Pattern)</option>
-                <option value="3,2,1,0">3,2,1,0 (Reverse)</option>
-                <option value="1,0,3,2">1,0,3,2 (Alternate)</option>
-                <option value="2,3,0,1">2,3,0,1 (Shift)</option>
-                <option value="0,0,0,0">0,0,0,0 (All Same)</option>
-                <option value="3,3,3,3">3,3,3,3 (All 270°)</option>
-              </select>
+                placeholder="0,1,2,3"
+                className="w-full px-3 py-2 bg-gray-600 text-white rounded border border-gray-500 focus:border-blue-500 focus:outline-none"
+              />
+              <div className="text-xs text-gray-400 mt-1">
+                Examples: 0,1,2,3 | 0,2,1,3 | 3,2,1,0 | 1,0,3,2
+              </div>
             </div>
           )}
 
@@ -652,7 +654,7 @@ export default function PositioningVisualization({
                     fontSize: '8px'
                   }}
                 >
-                  {position < currentStep ? position + 1 : ''}
+                  {traversalSequence.indexOf(position) + 1}
                 </div>
               ))}
             </div>
