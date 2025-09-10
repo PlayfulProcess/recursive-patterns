@@ -370,7 +370,7 @@ export default function PositioningVisualization({
     setRenderingGrid(new Array(totalCells).fill(null));
     setUsedTiles(new Set());
     setPatternTemplate([]);
-    
+  }, [selectedPattern, totalCells]);
 
   // Animation effect - Fixed to prevent multiple intervals and sync issues
   useEffect(() => {
@@ -449,8 +449,6 @@ export default function PositioningVisualization({
   useEffect(() => {
     detectDuplicates();
   }, [renderingGrid]);
-
-  // Pre-generate all tiles at once
 
   const resetAnimation = () => {
     setCurrentStep(0);
